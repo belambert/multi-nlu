@@ -1,0 +1,51 @@
+[project]
+name = "multi-nlu"
+version = "0.1.0"
+description = "Multi-intent NLU with generative language models"
+readme = "README.md"
+authors = [
+    { name = "Ben Lambert", email = "blambert@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "accelerate>=1.0",
+    "datasets>=3.0",
+    "peft>=0.14",
+    "pyyaml>=6.0",
+    "torch>=2.5",
+    "tqdm>=4.66",
+    "transformers>=4.51",
+    "typer>=0.15",
+]
+
+[project.scripts]
+multi-nlu = "multi_nlu.cli:main"
+
+[dependency-groups]
+dev = [
+    "black>=24.0",
+    "isort>=5.13",
+    "mypy>=1.13",
+    "pytest>=8.0",
+    "types-pyyaml>=6.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.3,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.13"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: needs a model download or GPU"]

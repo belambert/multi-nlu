@@ -1,0 +1,72 @@
+# Derived from the train split with `multi-nlu derive-schema`, keeping slots
+# that appear in >=1% of an intent's occurrences. The pruned pairs are all
+# <0.1% annotation noise from the utterance-mixing process.
+name: mixsnips
+description: Multi-intent SNIPS utterances annotated as inline XML.
+
+dataset:
+  path: blambert/mixsnips-xml
+  text_column: text
+  target_column: xml
+
+intents:
+  AddToPlaylist:
+    - artist
+    - entity_name
+    - music_item
+    - playlist
+    - playlist_owner
+  BookRestaurant:
+    - city
+    - country
+    - cuisine
+    - facility
+    - party_size_description
+    - party_size_number
+    - poi
+    - restaurant_name
+    - restaurant_type
+    - served_dish
+    - sort
+    - spatial_relation
+    - state
+    - timeRange
+  GetWeather:
+    - city
+    - condition_description
+    - condition_temperature
+    - country
+    - current_location
+    - geographic_poi
+    - spatial_relation
+    - state
+    - timeRange
+  PlayMusic:
+    - album
+    - artist
+    - genre
+    - music_item
+    - playlist
+    - service
+    - sort
+    - track
+    - year
+  RateBook:
+    - best_rating
+    - object_name
+    - object_part_of_series_type
+    - object_select
+    - object_type
+    - rating_unit
+    - rating_value
+  SearchCreativeWork:
+    - object_name
+    - object_type
+  SearchScreeningEvent:
+    - location_name
+    - movie_name
+    - movie_type
+    - object_location_type
+    - object_type
+    - spatial_relation
+    - timeRange
