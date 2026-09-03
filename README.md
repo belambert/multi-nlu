@@ -27,6 +27,16 @@ per utterance.
 Models and datasets come from the Hugging Face Hub; run `hf auth login` (or set
 `HF_TOKEN`) if either is private.
 
+## TODO
+
+- [ ] In dataset repo, use offset annotations instead of XML
+- [ ] In this repo, support modeling this in multiple ways. E.g. the
+    model can output XML tags, or offset annotations, or could output a
+    structured version directly, e.g. JSON. Investigate which works better.
+- [ ] add wandb/trackio
+- [ ] what else?
+
+
 ## Use
 
 Prompt a base model few-shot and score it:
