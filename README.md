@@ -27,6 +27,14 @@ per utterance.
 Models and datasets come from the Hugging Face Hub; run `hf auth login` (or set
 `HF_TOKEN`) if either is private.
 
+## Modeling options
+
+- Treat it like XML tagging
+- Output JSON offset annotations
+- Output a JSON dict version e.g. `[{"PlayMusic": {"slot1": ...}}]`
+- Various ways of using an encoder model?
+
+
 ## TODO
 
 - [ ] In dataset repo, use offset annotations instead of XML
@@ -34,6 +42,8 @@ Models and datasets come from the Hugging Face Hub; run `hf auth login` (or set
     model can output XML tags, or offset annotations, or could output a
     structured version directly, e.g. JSON. Investigate which works better.
 - [ ] add wandb/trackio
+- [ ] Do the modeling with an encoder model
+- [ ] Evaluation? Does order matter?
 - [ ] what else?
 
 
