@@ -7,8 +7,8 @@ from typing import Annotated, Optional
 import typer
 
 from multi_nlu import metrics
-from multi_nlu.annotation import parse_xml
 from multi_nlu.data import load_examples, sample_shots
+from multi_nlu.formats import DEFAULT, format_names, get_format
 from multi_nlu.predict import Prediction
 from multi_nlu.schema import DatasetSpec, builtin_schemas, derive_schema, load_schema
 
@@ -16,6 +16,9 @@ app = typer.Typer(help="Multi-intent NLU with generative language models.", no_a
 
 SchemaOpt = Annotated[
     str, typer.Option("--schema", "-s", help="Built-in schema name or YAML path.")
+]
+FormatOpt = Annotated[
+    str, typer.Option("--format", "-f", help=f"Annotation format: {', '.join(format_names())}.")
 ]
 ModelOpt = Annotated[str, typer.Option("--model", "-m", help="Hugging Face model id.")]
 SplitOpt = Annotated[str, typer.Option("--split", help="Dataset split to run on.")]
@@ -26,6 +29,7 @@ LimitOpt = Annotated[Optional[int], typer.Option("--limit", "-n", help="Random s
 def predict(
     model: ModelOpt = "Qwen/Qwen3-1.7B",
     schema: SchemaOpt = "mixsnips",
+    format: FormatOpt = DEFAULT,
     split: SplitOpt = "test",
     limit: LimitOpt = None,
     shots: Annotated[int, typer.Option(help="Few-shot demonstrations from the train split.")] = 0,
@@ -39,22 +43,21 @@ def predict(
     ] = None,
     seed: int = 0,
 ) -> None:
-    """Tag a split with a base or fine-tuned model, then score the result."""
+    """Annotate a split with a base or fine-tuned model, then score the result."""
     from multi_nlu.models import load_model
     from multi_nlu.predict import predict as run
 
-    task = load_schema(schema)
+    task, fmt = load_schema(schema), get_format(format)
     examples = load_examples(task, split, limit, seed)
     demos = sample_shots(load_examples(task, "train"), shots, seed) if shots else []
 
     model_, tokenizer, _ = load_model(
         model, adapter=str(adapter) if adapter else None, device=device
     )
+    generations = run([e.text for e in examples], model_, tokenizer, task, fmt, demos, batch_size)
     preds = [
-        Prediction(p.text, p.xml, gold=e.xml)
-        for p, e in zip(
-            run([e.text for e in examples], model_, tokenizer, task, demos, batch_size), examples
-        )
+        Prediction(p.text, p.output, gold=fmt.render(e.annotation), format=fmt.name)
+        for p, e in zip(generations, examples)
     ]
 
     if out:
@@ -76,6 +79,7 @@ def score(predictions: Annotated[Path, typer.Argument(help="JSONL written by `pr
 def train(
     model: ModelOpt = "Qwen/Qwen3-1.7B",
     schema: SchemaOpt = "mixsnips",
+    format: FormatOpt = DEFAULT,
     out: Annotated[Path, typer.Option("--out", "-o", help="Adapter output directory.")] = Path(
         "runs/latest"
     ),
@@ -111,6 +115,7 @@ def train(
     )
     run(
         task,
+        get_format(format),
         load_examples(task, "train", limit, seed),
         load_examples(task, "validation", eval_limit, seed),
         config,
@@ -126,17 +131,17 @@ def derive(
     ] = "",
     split: SplitOpt = "train",
     text_column: str = "text",
-    target_column: str = "xml",
+    intents_column: str = "intents",
     min_freq: Annotated[
         float, typer.Option(help="Drop slots rarer than this within an intent.")
     ] = 0.01,
     out: Annotated[Optional[Path], typer.Option("--out", "-o")] = None,
 ) -> None:
     """Write a schema YAML by reading the annotations of a dataset."""
-    spec = DatasetSpec(path=dataset, text_column=text_column, target_column=target_column)
+    spec = DatasetSpec(path=dataset, text_column=text_column, intents_column=intents_column)
     examples = load_examples(spec, split)
     result = derive_schema(
-        (e.xml for e in examples), name or dataset.rsplit("/", 1)[-1], spec, min_freq
+        (e.annotation for e in examples), name or dataset.rsplit("/", 1)[-1], spec, min_freq
     )
 
     if out:
@@ -156,23 +161,29 @@ def schemas() -> None:
 
 
 @app.command()
+def formats() -> None:
+    """List the annotation formats a model can be asked to produce."""
+    for name in format_names():
+        typer.echo(f"{name}: {get_format(name).description}")
+
+
+@app.command()
 def show(
     schema: SchemaOpt = "mixsnips",
+    format: FormatOpt = DEFAULT,
     split: SplitOpt = "validation",
     n: Annotated[int, typer.Option("-n", help="Examples to print.")] = 3,
     prompt: Annotated[bool, typer.Option(help="Print the system prompt too.")] = False,
 ) -> None:
-    """Print a few annotated examples, to sanity check a schema and its data."""
-    from multi_nlu.prompts import system_prompt
-
-    task = load_schema(schema)
+    """Print a few annotated examples, to sanity check a schema, format and data."""
+    task, fmt = load_schema(schema), get_format(format)
     if prompt:
-        typer.echo(system_prompt(task) + "\n")
+        typer.echo(fmt.system_prompt(task) + "\n")
 
     for example in load_examples(task, split, n):
         annotation = example.annotation
         typer.echo(example.text)
-        typer.echo(example.xml)
+        typer.echo(fmt.render(annotation))
         for intent in annotation.intents:
             slots = ", ".join(f"{s.label}={s.text(annotation.text)!r}" for s in intent.slots)
             typer.echo(f"  {intent.label}: {slots}")
@@ -180,13 +191,13 @@ def show(
 
 
 def _score(preds: list[Prediction]) -> str:
-    graded = [(p, p.gold) for p in preds if p.gold]
+    graded = [p for p in preds if p.gold is not None]
     if not graded:
         return "no gold annotations to score against"
     return metrics.score(
-        [parse_xml(gold, p.text) for p, gold in graded],
-        [p.annotation for p, _ in graded],
-        [p.text for p, _ in graded],
+        [p.gold_annotation for p in graded],
+        [p.annotation for p in graded],
+        [p.text for p in graded],
     ).summary()
 
 

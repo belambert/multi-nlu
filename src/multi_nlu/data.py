@@ -2,20 +2,18 @@
 
 import random
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Sequence
 
-from multi_nlu.annotation import Annotation, parse_xml
+from multi_nlu.annotation import Annotation, IntentSpan, Span
 from multi_nlu.schema import DatasetSpec, Schema
 
 
 @dataclass(frozen=True)
 class Example:
-    text: str
-    xml: str
+    """A gold example, held format-neutrally; each format renders its own target."""
 
-    @property
-    def annotation(self) -> Annotation:
-        return parse_xml(self.xml, self.text)
+    text: str
+    annotation: Annotation
 
 
 def load_examples(
@@ -32,7 +30,26 @@ def load_examples(
     if limit is not None and limit < len(data):
         data = data.shuffle(seed=seed).select(range(limit))
 
-    return [Example(r[spec.text_column], r[spec.target_column]) for r in data]
+    return [
+        Example(r[spec.text_column], to_annotation(r[spec.text_column], r[spec.intents_column]))
+        for r in data
+    ]
+
+
+def to_annotation(text: str, intents: Sequence[dict[str, Any]]) -> Annotation:
+    """Build an annotation from a dataset row's offset-annotated intents."""
+    return Annotation(
+        text=text,
+        intents=tuple(
+            IntentSpan(
+                i["intent"],
+                i["start"],
+                i["end"],
+                tuple(Span(s["name"], s["start"], s["end"]) for s in i["slots"]),
+            )
+            for i in intents
+        ),
+    )
 
 
 def sample_shots(examples: Sequence[Example], k: int, seed: int = 0) -> list[Example]:

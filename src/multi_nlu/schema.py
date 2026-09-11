@@ -4,9 +4,12 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import yaml
+
+if TYPE_CHECKING:
+    from multi_nlu.annotation import Annotation
 
 BUILTIN_DIR = resources.files("multi_nlu") / "schemas"
 
@@ -17,7 +20,7 @@ class DatasetSpec:
 
     path: str
     text_column: str = "text"
-    target_column: str = "xml"
+    intents_column: str = "intents"
     name: str | None = None  # HF config name, when the dataset has several
 
 
@@ -70,18 +73,16 @@ def builtin_schemas() -> list[str]:
 
 
 def derive_schema(
-    xmls: Iterable[str],
+    annotations: Iterable["Annotation"],
     name: str,
     dataset: DatasetSpec | None = None,
     min_freq: float = 0.01,
 ) -> Schema:
     """Build a schema from gold annotations, dropping slots rarer than min_freq."""
-    from multi_nlu.annotation import parse_xml
-
     totals: Counter[str] = Counter()
     seen: defaultdict[str, Counter[str]] = defaultdict(Counter)
-    for xml in xmls:
-        for intent in parse_xml(xml).intents:
+    for annotation in annotations:
+        for intent in annotation.intents:
             totals[intent.label] += 1
             seen[intent.label].update(slot.label for slot in intent.slots)
 

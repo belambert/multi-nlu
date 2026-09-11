@@ -2,12 +2,12 @@
 # that appear in >=1% of an intent's occurrences. The pruned pairs are all
 # <0.1% annotation noise from the utterance-mixing process.
 name: mixsnips
-description: Multi-intent SNIPS utterances annotated as inline XML.
+description: Multi-intent SNIPS utterances with offset-annotated intents and slots.
 
 dataset:
-  path: blambert/mixsnips-xml
+  path: blambert/mixsnips-intent-spans
   text_column: text
-  target_column: xml
+  intents_column: intents
 
 intents:
   AddToPlaylist:

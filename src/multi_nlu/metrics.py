@@ -1,9 +1,10 @@
-"""Scoring predicted annotations against gold.
+"""Scoring predicted annotations against gold, whatever format produced them.
 
-Generative models can drift from the input utterance, which shifts every
-character offset after the drift. So the headline slot metrics compare span
-*values* as multisets; `slot_span_f1` reports the stricter offset-based
-agreement, and is only meaningful on faithful predictions.
+Everything here works on Annotations, so numbers from different formats are
+directly comparable. Generative models can drift from the input utterance, which
+shifts every character offset after the drift, so the headline slot metrics
+compare span *values* as multisets; `slot_span` reports the stricter
+offset-based agreement, and is only meaningful on faithful predictions.
 """
 
 from collections import Counter

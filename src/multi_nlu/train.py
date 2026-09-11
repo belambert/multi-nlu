@@ -1,4 +1,4 @@
-"""LoRA fine-tuning of a causal LM to emit inline-XML annotations."""
+"""LoRA fine-tuning of a causal LM to emit annotations in a chosen format."""
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -9,6 +9,7 @@ from peft import LoraConfig, get_peft_model
 from transformers import PreTrainedTokenizerBase, Trainer, TrainingArguments
 
 from multi_nlu.data import Example
+from multi_nlu.formats import Format
 from multi_nlu.models import load_model
 from multi_nlu.prompts import build_messages
 from multi_nlu.schema import Schema
@@ -46,6 +47,7 @@ class TrainConfig:
 
 def train(
     schema: Schema,
+    fmt: Format,
     train_examples: Sequence[Example],
     eval_examples: Sequence[Example],
     config: TrainConfig,
@@ -84,7 +86,7 @@ def train(
         seed=config.seed,
     )
 
-    encode = Encoder(tokenizer, schema, config.max_len)
+    encode = Encoder(tokenizer, schema, fmt, config.max_len)
     Trainer(
         model=model,
         args=args,
@@ -104,16 +106,18 @@ class Encoder:
 
     tokenizer: PreTrainedTokenizerBase
     schema: Schema
+    fmt: Format
     max_len: int
 
     def __call__(self, example: Example) -> dict[str, list[int]]:
-        messages = build_messages(example.text, self.schema)
+        messages = build_messages(example.text, self.schema, self.fmt)
         prompt = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
         )
         prompt_ids = self.tokenizer(prompt, add_special_tokens=False)["input_ids"]
         answer_ids = self.tokenizer(
-            example.xml + self.tokenizer.eos_token, add_special_tokens=False
+            self.fmt.render(example.annotation) + self.tokenizer.eos_token,
+            add_special_tokens=False,
         )["input_ids"]
 
         ids = (prompt_ids + answer_ids)[: self.max_len]

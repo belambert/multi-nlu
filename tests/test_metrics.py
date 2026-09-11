@@ -1,5 +1,7 @@
-from multi_nlu.annotation import parse_xml
+from multi_nlu.formats import get_format
 from multi_nlu.metrics import score
+
+xml = get_format("xml")
 
 TEXT = "book a table in ames and play jazz"
 GOLD = (
@@ -8,8 +10,8 @@ GOLD = (
 )
 
 
-def run(pred_xml, gold_xml=GOLD, text=TEXT):
-    return score([parse_xml(gold_xml)], [parse_xml(pred_xml, text)], [text])
+def run(pred, gold=GOLD, text=TEXT):
+    return score([xml.parse(gold)], [xml.parse(pred, text)], [text])
 
 
 def test_perfect_prediction():
@@ -61,3 +63,12 @@ def test_malformed_prediction_scores_zero():
     s = run("<BookRestaurant>book a table in <city>ames</city>")
 
     assert s.well_formed == s.intent.f1 == s.slot.f1 == s.exact_match == 0.0
+
+
+def test_prediction_reads_itself_back_through_its_format():
+    from multi_nlu.predict import Prediction
+
+    pred = Prediction(TEXT, GOLD, gold=GOLD, format="xml")
+
+    assert pred.annotation == pred.gold_annotation
+    assert score([pred.gold_annotation], [pred.annotation], [TEXT]).exact_match == 1.0
