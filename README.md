@@ -67,6 +67,46 @@ records the format that produced it, so `score` needs no flags:
     uv run multi-nlu predict ... -o preds.jsonl
     uv run multi-nlu score preds.jsonl
 
+Both `predict` and `score` take `--detail` (`-d`) to print the examples
+themselves — `errors` for the ones that went wrong, `all` for every one:
+
+    uv run multi-nlu score preds.jsonl -d errors
+
+Each example shows its status and a diff of its intents and slots. Matches
+collapse to a count so the errors stand out, one per line; `-` marks something
+gold had and the prediction missed, `+` something the prediction invented:
+
+    ~ partial   add this ruth crawford seeger song to my playlist
+      intents   ✓1
+      slots     ✓3
+                -AddToPlaylist.artist='ruth crawford seeger'
+                -AddToPlaylist.music_item='song'
+                +AddToPlaylist.music_item='this ruth crawford seeger song'
+    ────────────────────────────────────────────────────────────────────────────
+
+Reading a `-` against the `+` under it usually names the mistake: here the
+prediction swallowed the artist into the music item instead of splitting them.
+
+A `correct` example matches gold on every intent and slot, `partial` gets some
+of them, `wrong` none, and `malformed` did not parse at all. Each status has its
+own colour on a terminal — green, yellow, red and magenta — so a long run can be
+skimmed. Only a `malformed`
+example prints the generation itself, since nothing could be read out of it;
+anywhere else the marks and the diff below say more than the raw output does.
+
+A format like `xml` asks the model to copy the utterance back verbatim and only
+add tags, so when it paraphrases instead, every character offset after the
+change stops lining up with gold. Those examples get a two-line word diff of
+the utterance against the text the model actually copied. The text the two
+share is dimmed, so what stands out is the words that differ — green for what
+the utterance says, red for what the prediction put there:
+
+    want      ... in panama for two people and give the current book a zero of 6
+    copied    ... in panama for two people and please give the current book a zero of 6
+
+Colour is dropped when the output is not a terminal, so piping to a file or a
+pager stays readable.
+
 Other commands: `show` prints annotated examples in a format and the system
 prompt, `formats` and `schemas` list what is bundled, `derive-schema` builds a
 new schema. Every command takes `--help`.
@@ -146,6 +186,7 @@ annotations — and pass it to any command:
         models.py       model loading, device and dtype selection
         predict.py      batched generation
         metrics.py      scoring, on annotations rather than text
+        report.py       per-example diffs of gold against a prediction
         train.py        LoRA fine-tuning
         cli.py          command line interface
 
@@ -154,5 +195,5 @@ annotations — and pass it to any command:
     uv run pytest
     uv run black . && uv run isort . && uv run mypy src
 
-The tests cover the span model, the XML format, scoring, prompting and schema
-handling, and need neither a model nor the dataset.
+The tests cover the span model, the XML format, scoring, per-example diffs,
+prompting and schema handling, and need neither a model nor the dataset.

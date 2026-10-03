@@ -6,10 +6,11 @@ from typing import Annotated, Optional
 
 import typer
 
-from multi_nlu import metrics
+from multi_nlu import metrics, report
 from multi_nlu.data import load_examples, sample_shots
 from multi_nlu.formats import DEFAULT, format_names, get_format
 from multi_nlu.predict import Prediction
+from multi_nlu.report import Detail
 from multi_nlu.schema import DatasetSpec, builtin_schemas, derive_schema, load_schema
 
 app = typer.Typer(help="Multi-intent NLU with generative language models.", no_args_is_help=True)
@@ -23,6 +24,15 @@ FormatOpt = Annotated[
 ModelOpt = Annotated[str, typer.Option("--model", "-m", help="Hugging Face model id.")]
 SplitOpt = Annotated[str, typer.Option("--split", help="Dataset split to run on.")]
 LimitOpt = Annotated[Optional[int], typer.Option("--limit", "-n", help="Random subsample size.")]
+DetailOpt = Annotated[
+    Detail,
+    typer.Option(
+        "--detail",
+        "-d",
+        help="Print each example: errors only, or all of them.",
+        case_sensitive=False,
+    ),
+]
 
 
 @app.command()
@@ -41,6 +51,7 @@ def predict(
     out: Annotated[
         Optional[Path], typer.Option("--out", "-o", help="Write predictions as JSONL.")
     ] = None,
+    detail: DetailOpt = Detail.NONE,
     seed: int = 0,
 ) -> None:
     """Annotate a split with a base or fine-tuned model, then score the result."""
@@ -65,14 +76,17 @@ def predict(
         out.write_text("\n".join(json.dumps(vars(p)) for p in preds) + "\n")
         typer.echo(f"wrote {len(preds)} predictions to {out}")
 
-    typer.echo(_score(preds))
+    typer.echo(_report(preds, detail))
 
 
 @app.command()
-def score(predictions: Annotated[Path, typer.Argument(help="JSONL written by `predict`.")]) -> None:
+def score(
+    predictions: Annotated[Path, typer.Argument(help="JSONL written by `predict`.")],
+    detail: DetailOpt = Detail.NONE,
+) -> None:
     """Re-score a saved predictions file."""
     rows = [json.loads(line) for line in predictions.read_text().splitlines() if line]
-    typer.echo(_score([Prediction(**row) for row in rows]))
+    typer.echo(_report([Prediction(**row) for row in rows], detail))
 
 
 @app.command()
@@ -190,15 +204,21 @@ def show(
         typer.echo("")
 
 
-def _score(preds: list[Prediction]) -> str:
+def _report(preds: list[Prediction], detail: Detail = Detail.NONE) -> str:
+    """The scores, optionally preceded by a diff of each example."""
     graded = [p for p in preds if p.gold is not None]
     if not graded:
         return "no gold annotations to score against"
-    return metrics.score(
-        [p.gold_annotation for p in graded],
-        [p.annotation for p in graded],
-        [p.text for p in graded],
-    ).summary()
+
+    golds = [p.gold_annotation for p in graded]
+    predicted = [p.annotation for p in graded]
+    scores = metrics.score(golds, predicted, [p.text for p in graded])
+    if detail is Detail.NONE:
+        return scores.summary()
+
+    diffs = [report.diff(g, a, p.text, p.output) for g, a, p in zip(golds, predicted, graded)]
+    shown = [d for d in diffs if detail is Detail.ALL or d.status is not report.Status.CORRECT]
+    return report.render_all(shown) + "\n".join([report.summarize(diffs), scores.summary()])
 
 
 def main() -> None:
