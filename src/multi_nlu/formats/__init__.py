@@ -1,13 +1,14 @@
 """The modeling formats: ways of writing an annotation for a generative model.
 
-Only inline XML is implemented so far; offset annotations and a structured JSON
-form are the next two. Register a new Format here and every command can use it.
+A structured JSON form is still to come. Register a new Format here and every
+command can use it.
 """
 
 from multi_nlu.formats.base import Format, schema_block
+from multi_nlu.formats.offset import OffsetFormat
 from multi_nlu.formats.xml import XmlFormat
 
-FORMATS: dict[str, Format] = {f.name: f for f in [XmlFormat()]}
+FORMATS: dict[str, Format] = {f.name: f for f in [XmlFormat(), OffsetFormat()]}
 
 DEFAULT = "xml"
 
@@ -26,6 +27,7 @@ __all__ = [
     "DEFAULT",
     "FORMATS",
     "Format",
+    "OffsetFormat",
     "XmlFormat",
     "format_names",
     "get_format",
