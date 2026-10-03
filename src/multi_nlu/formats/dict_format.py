@@ -60,20 +60,20 @@ class DictFormat(Format):
             ):
                 return Annotation(text=utterance, malformed=True)
 
-        cursor = 0
+        used: set[tuple[int, int]] = set()
         intents = []
         for obj in data:
             label, slots = next(iter(obj.items()))
             spans = []
             for slot_label, text in slots.items():
-                found = _find(utterance, text, cursor)
+                found = _find(utterance, text, used)
                 if found is None:
                     # a hallucinated or mismatched value has no offset to anchor it
                     # to, so it's unscoreable; drop it rather than invent a span.
                     continue
                 start, end = found
                 spans.append(Span(slot_label, start, end))
-                cursor = end
+                used.add((start, end))
             if spans:
                 start = min(s.start for s in spans)
                 end = max(s.end for s in spans)
@@ -89,20 +89,22 @@ class DictFormat(Format):
         return text[start:].strip() if start >= 0 else text
 
 
-def _find(utterance: str, target: str, start: int) -> tuple[int, int] | None:
-    """Locate target in utterance at or after start; case-sensitive then insensitive.
-
-    The insensitive retry scans same-length windows, so it catches case differences
-    but not whitespace reflowing within the span (a narrower net than `value`'s full
-    normalization allows, which is fine since slot text is otherwise copied verbatim).
-    """
-    idx = utterance.find(target, start)
-    if idx >= 0:
-        return idx, idx + len(target)
+def _find(utterance: str, target: str, used: set[tuple[int, int]]) -> tuple[int, int] | None:
+    """Locate target in utterance, skipping spans already claimed by another slot."""
+    idx = 0
+    while True:
+        idx = utterance.find(target, idx)
+        if idx < 0:
+            break
+        span = (idx, idx + len(target))
+        if span not in used:
+            return span
+        idx += 1
 
     norm_target = value(target)
     width = len(target)
-    for i in range(start, len(utterance) - width + 1):
-        if value(utterance[i : i + width]) == norm_target:
-            return i, i + width
+    for i in range(len(utterance) - width + 1):
+        span = (i, i + width)
+        if span not in used and value(utterance[i : i + width]) == norm_target:
+            return span
     return None

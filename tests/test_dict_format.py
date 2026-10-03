@@ -88,6 +88,21 @@ def test_duplicate_values_resolve_to_distinct_occurrences():
     assert parsed == annotation
 
 
+def test_out_of_order_intents_still_locate_earlier_slots():
+    # the JSON can list intents in any order, but a slot's value may sit earlier
+    # in the utterance than one already matched for a later-listed intent - a
+    # single forward-only cursor would wrongly fail to find it.
+    text = "play jazz then book a table in ames"
+    output = '[{"BookRestaurant":{"city":"ames"}},{"PlayMusic":{"genre":"jazz"}}]'
+
+    parsed = dict_fmt.parse(output, text)
+
+    city = next(s for i in parsed.intents for s in i.slots if s.label == "city")
+    genre = next(s for i in parsed.intents for s in i.slots if s.label == "genre")
+    assert text[city.start : city.end] == "ames"
+    assert text[genre.start : genre.end] == "jazz"
+
+
 def test_unmatchable_value_is_dropped_not_raised():
     output = '[{"PlayMusic":{"genre":"jazz","artist":"nobody real"}}]'
 
