@@ -13,7 +13,7 @@ from multi_nlu.formats import Format
 from multi_nlu.models import load_model
 from multi_nlu.prompts import build_messages
 from multi_nlu.schema import Schema
-from multi_nlu.tracking import Tracker, check_tracker_available
+from multi_nlu.tracking import Tracker, check_tracker_available, default_wandb_mode
 
 IGNORE = -100
 
@@ -44,7 +44,7 @@ class TrainConfig:
     log_steps: int = 20
     seed: int = 0
     device: str | None = field(default=None)
-    tracker: Tracker = Tracker.NONE
+    tracker: Tracker = Tracker.WANDB
     run_name: str | None = None
 
 
@@ -57,6 +57,8 @@ def train(
 ) -> Path:
     """Fine-tune a LoRA adapter and save it to config.out_dir."""
     check_tracker_available(config.tracker)
+    if config.tracker is Tracker.WANDB:
+        default_wandb_mode()
     model, tokenizer, device = load_model(config.model_id, device=config.device, train=True)
     tokenizer.padding_side = "right"
 

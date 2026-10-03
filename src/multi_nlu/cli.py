@@ -111,8 +111,14 @@ def train(
     device: Annotated[Optional[str], typer.Option()] = None,
     tracker: Annotated[
         Tracker,
-        typer.Option(help="Experiment tracker to report metrics to.", case_sensitive=False),
-    ] = Tracker.NONE,
+        typer.Option(
+            help=(
+                "Experiment tracker to report metrics to; wandb logs offline "
+                "with no account configured. Use `none` to disable."
+            ),
+            case_sensitive=False,
+        ),
+    ] = Tracker.WANDB,
     run_name: Annotated[
         Optional[str], typer.Option(help="Run name for the tracker; defaults to --out's name.")
     ] = None,

@@ -29,8 +29,10 @@ annotated as character offsets rather than in any one output format.
 Models and datasets come from the Hugging Face Hub; run `hf auth login` (or set
 `HF_TOKEN`) if either is private.
 
-Experiment tracking (`--tracker wandb`/`trackio` on `train`) needs its package
-installed: `uv sync --extra tracking`.
+`train` logs to [wandb](https://wandb.ai) by default; with no account configured it
+logs offline (run data saved under `./wandb/`, nothing sent over the network).
+Pass `--tracker none` to disable tracking entirely. `--tracker trackio` needs its
+package installed: `uv sync --extra tracking`.
 
 ## Formats
 
@@ -63,11 +65,13 @@ through the same one:
 
     uv run multi-nlu train --format xml -o runs/xml
 
-`train` can report metrics to an experiment tracker via `--tracker`
-(`none` by default, or `wandb`/`trackio`); the run name defaults to the
-adapter directory's name unless `--run-name` is given:
+`train` reports metrics to an experiment tracker via `--tracker`
+(`wandb` by default, or `trackio`/`none`); the run name defaults to the
+adapter directory's name unless `--run-name` is given. With no wandb
+account configured, runs log offline rather than prompting for login:
 
     uv run multi-nlu train -m Qwen/Qwen3-1.7B --tracker trackio
+    uv run multi-nlu train -m Qwen/Qwen3-1.7B --tracker none
 
 Predictions can be saved and re-scored without rerunning the model; each row
 records the format that produced it, so `score` needs no flags:

@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from unittest.mock import patch
@@ -6,7 +7,7 @@ import pytest
 from typer.testing import CliRunner
 
 from multi_nlu.cli import app
-from multi_nlu.tracking import Tracker, check_tracker_available
+from multi_nlu.tracking import Tracker, check_tracker_available, default_wandb_mode
 from multi_nlu.train import TrainConfig
 
 runner = CliRunner()
@@ -19,10 +20,10 @@ def _plain(output: str) -> str:
     return _ANSI_RE.sub("", output)
 
 
-def test_train_config_defaults_to_no_tracking():
+def test_train_config_defaults_to_wandb():
     config = TrainConfig()
 
-    assert config.tracker is Tracker.NONE
+    assert config.tracker is Tracker.WANDB
     assert config.run_name is None
 
 
@@ -54,6 +55,34 @@ def test_check_tracker_available_raises_when_trackio_missing(_mock):
 @patch("transformers.integrations.is_wandb_available", return_value=True)
 def test_check_tracker_available_passes_when_installed(_mock):
     check_tracker_available(Tracker.WANDB)  # must not raise
+
+
+def test_default_wandb_mode_falls_back_to_offline_without_credentials(monkeypatch):
+    monkeypatch.delenv("WANDB_MODE", raising=False)
+    monkeypatch.delenv("WANDB_API_KEY", raising=False)
+    monkeypatch.setenv("NETRC", "/nonexistent-netrc-file")
+
+    default_wandb_mode()
+
+    assert os.environ["WANDB_MODE"] == "offline"
+
+
+def test_default_wandb_mode_leaves_api_key_login_alone(monkeypatch):
+    monkeypatch.delenv("WANDB_MODE", raising=False)
+    monkeypatch.setenv("WANDB_API_KEY", "fake-key")
+
+    default_wandb_mode()
+
+    assert "WANDB_MODE" not in os.environ
+
+
+def test_default_wandb_mode_leaves_explicit_mode_alone(monkeypatch):
+    monkeypatch.setenv("WANDB_MODE", "online")
+    monkeypatch.delenv("WANDB_API_KEY", raising=False)
+
+    default_wandb_mode()
+
+    assert os.environ["WANDB_MODE"] == "online"
 
 
 def test_cli_rejects_invalid_tracker():
