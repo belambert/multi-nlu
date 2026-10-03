@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -9,6 +10,13 @@ from multi_nlu.tracking import Tracker, check_tracker_available
 from multi_nlu.train import TrainConfig
 
 runner = CliRunner()
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(output: str) -> str:
+    """Strip rich's ANSI styling, which can split a word across escape codes."""
+    return _ANSI_RE.sub("", output)
 
 
 def test_train_config_defaults_to_no_tracking():
@@ -52,16 +60,19 @@ def test_cli_rejects_invalid_tracker():
     result = runner.invoke(app, ["train", "--tracker", "not-a-tracker"])
 
     assert result.exit_code != 0
-    assert "not-a-tracker" in result.output
+    assert "not-a-tracker" in _plain(result.output)
 
 
 @pytest.mark.parametrize("tracker", ["none", "wandb", "trackio"])
 def test_cli_accepts_valid_trackers(tracker):
-    # fails past validation (no model/data fetch here), so just check it's not a usage error
+    # fails past validation (no model/data fetch here), so just check it's not a usage error.
+    # GitHub Actions makes typer force rich's terminal styling (it checks the GITHUB_ACTIONS env
+    # var), which can split "--tracker" across ANSI escape codes mid-word; strip them before
+    # asserting so this doesn't depend on the CI environment's rendering quirks
     result = runner.invoke(app, ["train", "--tracker", tracker, "--help"])
 
     assert result.exit_code == 0
-    assert "--tracker" in result.output
+    assert "--tracker" in _plain(result.output)
 
 
 def test_cli_train_passes_tracker_and_run_name_through(tmp_path: Path):
