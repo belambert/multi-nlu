@@ -14,7 +14,7 @@ dependencies = [
     "pyyaml>=6.0",
     "torch>=2.5",
     "tqdm>=4.66",
-    "transformers>=4.51",
+    "transformers>=4.54",
     "typer>=0.15",
 ]
 
