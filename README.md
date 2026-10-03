@@ -39,11 +39,10 @@ approach means adding one `Format` and nothing else. `--format` picks one, and
 | Format   | Status | The model emits                                                                         |
 | -------- | ------ | ---------------------------------------------------------------------------------------- |
 | `xml`    | done   | the utterance copied verbatim with inline XML tags added                                 |
-| `offset` | done   | a JSON list of intents and slots as character offsets                                    |
 | `dict`   | done   | `[{"PlayMusic": {"genre": …}}]`, slots copied verbatim; a repeated slot label collapses  |
 
-`xml`, `offset`, and `dict` all exist today, and an encoder-based baseline sits
-outside this interface.
+`xml` and `dict` both exist today, and an encoder-based baseline sits outside
+this interface.
 
 ## Use
 
@@ -147,14 +146,12 @@ Few-shot prompting (8 shots) on the full test split (n = 2199), from
 | Model          | Format   | Intent F1 | Slot F1 | Slot F1 scoped | Slot F1 exact | Exact match | Well formed | Faithful |
 | -------------- | -------- | --------- | ------- | -------------- | ------------- | ----------- | ----------- | -------- |
 | Qwen3.5-2B     | `xml`    |    88.58% |  46.27% |         44.06% |        22.65% |       4.91% |      97.18% |   25.51% |
-| Qwen3.5-2B     | `offset` |    69.87% |   0.68% |          0.65% |         0.43% |       0.00% |      70.76% |   70.76% |
 | Qwen3.5-2B     | `dict`   |    82.48% |  43.51% |         42.19% |        42.16% |       3.55% |      99.68% |   99.68% |
 | _other models_ |          |           |         |                |               |             |             |          |
 
 Few-shot `xml` rarely copies the utterance back faithfully (25.5%), which is
 why its exact-span slot F1 is about half its by-value score; `dict` copies slot
-text rather than the whole utterance and loses almost nothing. `offset` fails
-because the model cannot count characters, not because it misses the intents.
+text rather than the whole utterance and loses almost nothing.
 
 ### Fine-Tuned (LoRA)
 
@@ -191,7 +188,7 @@ annotations — and pass it to any command:
 
 ## TODO
 
-- [ ] Compare all three formats
+- [ ] Compare both formats
 - [ ] Do the modeling with an encoder model
 - [ ] add wandb/trackio
 - [ ] Evaluation? Does order matter?
@@ -207,7 +204,6 @@ annotations — and pass it to any command:
             base.py     the Format interface and shared prompt preamble
             xml.py      inline XML tagging
             dict_format.py  structured-JSON tagging
-            offset.py   character-offset annotations
         data.py         loading examples, sampling few-shot demonstrations
         prompts.py      the message layout shared by prompting and fine-tuning
         models.py       model loading, device and dtype selection
@@ -222,7 +218,7 @@ annotations — and pass it to any command:
     uv run pytest
     uv run black . && uv run isort . && uv run mypy src
 
-The tests cover the span model, the `xml`, `dict`, and `offset` formats,
+The tests cover the span model, the `xml` and `dict` formats,
 scoring, per-example diffs, prompting and schema handling, and need neither a
 model nor a GPU; one `dict` test pulls real examples from the dataset to check
 round-trip fidelity, so it needs network access the first time it isn't cached.
