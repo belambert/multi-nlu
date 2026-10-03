@@ -36,14 +36,13 @@ what to emit, and the parser reading a generation back into spans — so adding 
 approach means adding one `Format` and nothing else. `--format` picks one, and
 `multi-nlu formats` lists what is implemented.
 
-| Format | Status | The model emits                                              |
-| ------ | ------ | ------------------------------------------------------------ |
-| `xml`  | done   | the utterance copied verbatim with inline XML tags added     |
-| offset | todo   | a JSON list of intents and slots as character offsets        |
-| dict   | todo   | a structured JSON form, e.g. `[{"PlayMusic": {"genre": …}}]` |
+| Format   | Status | The model emits                                              |
+| -------- | ------ | ------------------------------------------------------------ |
+| `xml`    | done   | the utterance copied verbatim with inline XML tags added     |
+| `offset` | done   | a JSON list of intents and slots as character offsets        |
+| dict     | todo   | a structured JSON form, e.g. `[{"PlayMusic": {"genre": …}}]` |
 
-Only `xml` exists today; the others are next, and an encoder-based baseline sits
-outside this interface.
+`dict` is next, and an encoder-based baseline sits outside this interface.
 
 ## Use
 
@@ -165,7 +164,6 @@ annotations — and pass it to any command:
 
 ## TODO
 
-- [ ] Add the offset-annotation format
 - [ ] Add the structured-JSON format, and compare all three
 - [ ] Do the modeling with an encoder model
 - [ ] add wandb/trackio

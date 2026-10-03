@@ -41,7 +41,7 @@ def test_derive_schema_drops_rare_slots():
 
 
 def test_xml_is_the_default_format():
-    assert format_names() == ["xml"]
+    assert "xml" in format_names()
     assert get_format(DEFAULT).name == "xml"
 
 
