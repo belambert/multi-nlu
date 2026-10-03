@@ -36,13 +36,14 @@ what to emit, and the parser reading a generation back into spans — so adding 
 approach means adding one `Format` and nothing else. `--format` picks one, and
 `multi-nlu formats` lists what is implemented.
 
-| Format   | Status | The model emits                                              |
-| -------- | ------ | ------------------------------------------------------------ |
-| `xml`    | done   | the utterance copied verbatim with inline XML tags added     |
-| `offset` | done   | a JSON list of intents and slots as character offsets        |
-| dict     | todo   | a structured JSON form, e.g. `[{"PlayMusic": {"genre": …}}]` |
+| Format   | Status | The model emits                                                                         |
+| -------- | ------ | ---------------------------------------------------------------------------------------- |
+| `xml`    | done   | the utterance copied verbatim with inline XML tags added                                 |
+| `offset` | done   | a JSON list of intents and slots as character offsets                                    |
+| `dict`   | done   | `[{"PlayMusic": {"genre": …}}]`, slots copied verbatim; a repeated slot label collapses  |
 
-`dict` is next, and an encoder-based baseline sits outside this interface.
+`xml`, `offset`, and `dict` all exist today, and an encoder-based baseline sits
+outside this interface.
 
 ## Use
 
@@ -164,7 +165,7 @@ annotations — and pass it to any command:
 
 ## TODO
 
-- [ ] Add the structured-JSON format, and compare all three
+- [ ] Compare all three formats
 - [ ] Do the modeling with an encoder model
 - [ ] add wandb/trackio
 - [ ] Evaluation? Does order matter?
@@ -179,6 +180,8 @@ annotations — and pass it to any command:
         formats/        one module per way of writing an annotation down
             base.py     the Format interface and shared prompt preamble
             xml.py      inline XML tagging
+            dict_format.py  structured-JSON tagging
+            offset.py   character-offset annotations
         data.py         loading examples, sampling few-shot demonstrations
         prompts.py      the message layout shared by prompting and fine-tuning
         models.py       model loading, device and dtype selection
@@ -193,5 +196,7 @@ annotations — and pass it to any command:
     uv run pytest
     uv run black . && uv run isort . && uv run mypy src
 
-The tests cover the span model, the XML format, scoring, per-example diffs,
-prompting and schema handling, and need neither a model nor the dataset.
+The tests cover the span model, the `xml`, `dict`, and `offset` formats,
+scoring, per-example diffs, prompting and schema handling, and need neither a
+model nor a GPU; one `dict` test pulls real examples from the dataset to check
+round-trip fidelity, so it needs network access the first time it isn't cached.

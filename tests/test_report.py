@@ -83,6 +83,16 @@ def test_only_malformed_examples_show_the_raw_output():
     )
 
 
+def test_malformed_output_shows_nothing_but_the_raw_output():
+    # a malformed prediction parses to no intents or slots at all, so the
+    # intents/slots rows below `got` would be nothing but every gold item
+    # marked missing - noise that adds nothing since nothing was read back.
+    out = run("<BookRestaurant>book a table").render()
+
+    assert "intents" not in out
+    assert "slots" not in out
+
+
 def test_summarize_counts_each_status():
     diffs = [run(GOLD), run(GOLD), run("i have no idea")]
 
