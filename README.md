@@ -112,15 +112,12 @@ new schema. Every command takes `--help`.
 
 ### Comparing formats
 
-`scripts/compare-formats.sh` runs `predict` once per registered format against
-one model and the same sampled examples, then prints a metrics table side by
-side:
+`scripts/compare-formats.sh` runs `predict` on the same model and sample once
+per format, printing each one's scores in turn:
 
-    ./scripts/compare-formats.sh -m Qwen/Qwen3-1.7B --shots 8 --split test -n 200
+    ./scripts/compare-formats.sh
 
-It discovers formats from `multi-nlu formats`, so it keeps working as more are
-added; `--formats xml,offset` compares a subset. Each format's predictions land
-in `runs/compare/<format>.jsonl` for later inspection with `multi-nlu score`.
+Edit the model or args in the script directly to compare something else.
 
 The device is chosen automatically — cuda, then mps, then cpu — and `--device`
 overrides it. Training uses bf16 on cuda and fp32 elsewhere.
