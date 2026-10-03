@@ -12,6 +12,7 @@ from multi_nlu.formats import DEFAULT, format_names, get_format
 from multi_nlu.predict import Prediction
 from multi_nlu.report import Detail
 from multi_nlu.schema import DatasetSpec, builtin_schemas, derive_schema, load_schema
+from multi_nlu.tracking import Tracker
 
 app = typer.Typer(help="Multi-intent NLU with generative language models.", no_args_is_help=True)
 
@@ -108,6 +109,13 @@ def train(
     lora_r: int = 16,
     max_len: int = 1024,
     device: Annotated[Optional[str], typer.Option()] = None,
+    tracker: Annotated[
+        Tracker,
+        typer.Option(help="Experiment tracker to report metrics to.", case_sensitive=False),
+    ] = Tracker.NONE,
+    run_name: Annotated[
+        Optional[str], typer.Option(help="Run name for the tracker; defaults to --out's name.")
+    ] = None,
     seed: int = 0,
 ) -> None:
     """Fine-tune a LoRA adapter on the train split."""
@@ -125,6 +133,8 @@ def train(
         lora_r=lora_r,
         max_len=max_len,
         device=device,
+        tracker=tracker,
+        run_name=run_name,
         seed=seed,
     )
     run(

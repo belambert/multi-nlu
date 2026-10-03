@@ -13,6 +13,7 @@ from multi_nlu.formats import Format
 from multi_nlu.models import load_model
 from multi_nlu.prompts import build_messages
 from multi_nlu.schema import Schema
+from multi_nlu.tracking import Tracker, check_tracker_available
 
 IGNORE = -100
 
@@ -43,6 +44,8 @@ class TrainConfig:
     log_steps: int = 20
     seed: int = 0
     device: str | None = field(default=None)
+    tracker: Tracker = Tracker.NONE
+    run_name: str | None = None
 
 
 def train(
@@ -53,6 +56,7 @@ def train(
     config: TrainConfig,
 ) -> Path:
     """Fine-tune a LoRA adapter and save it to config.out_dir."""
+    check_tracker_available(config.tracker)
     model, tokenizer, device = load_model(config.model_id, device=config.device, train=True)
     tokenizer.padding_side = "right"
 
@@ -82,7 +86,8 @@ def train(
         eval_steps=config.eval_steps,
         save_strategy="no",
         bf16=device.type == "cuda" and torch.cuda.is_bf16_supported(),
-        report_to=[],
+        report_to=[config.tracker.value] if config.tracker is not Tracker.NONE else [],
+        run_name=config.run_name or config.out_dir.name,
         seed=config.seed,
     )
 

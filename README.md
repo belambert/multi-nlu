@@ -29,6 +29,9 @@ annotated as character offsets rather than in any one output format.
 Models and datasets come from the Hugging Face Hub; run `hf auth login` (or set
 `HF_TOKEN`) if either is private.
 
+Experiment tracking (`--tracker wandb`/`trackio` on `train`) needs its package
+installed: `uv sync --extra tracking`.
+
 ## Formats
 
 A format owns both halves of the contract — the instructions telling the model
@@ -59,6 +62,12 @@ Both commands take `--format`, and training an adapter on a format evaluates
 through the same one:
 
     uv run multi-nlu train --format xml -o runs/xml
+
+`train` can report metrics to an experiment tracker via `--tracker`
+(`none` by default, or `wandb`/`trackio`); the run name defaults to the
+adapter directory's name unless `--run-name` is given:
+
+    uv run multi-nlu train -m Qwen/Qwen3-1.7B --tracker trackio
 
 Predictions can be saved and re-scored without rerunning the model; each row
 records the format that produced it, so `score` needs no flags:
@@ -166,7 +175,6 @@ annotations — and pass it to any command:
 
 - [ ] Add the structured-JSON format, and compare all three
 - [ ] Do the modeling with an encoder model
-- [ ] add wandb/trackio
 - [ ] Evaluation? Does order matter?
 - [ ] Fix the 2 train rows whose slot span overruns its intent span (dataset repo)
 - [ ] what else?
@@ -186,6 +194,7 @@ annotations — and pass it to any command:
         metrics.py      scoring, on annotations rather than text
         report.py       per-example diffs of gold against a prediction
         train.py        LoRA fine-tuning
+        tracking.py     experiment tracker selection
         cli.py          command line interface
 
 ## Development

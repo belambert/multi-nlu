@@ -18,6 +18,12 @@ dependencies = [
     "typer>=0.15",
 ]
 
+[project.optional-dependencies]
+tracking = [
+    "wandb>=0.18",
+    "trackio>=0.1",
+]
+
 [project.scripts]
 multi-nlu = "multi_nlu.cli:main"
 
