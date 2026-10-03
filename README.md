@@ -136,6 +136,32 @@ all; they are usually the first thing fine-tuning fixes. Formats that emit
 offsets rather than a copy of the utterance are faithful by construction, which
 is part of what the comparison is meant to expose.
 
+## Results
+
+Few-shot prompting (8 shots) on the full test split (n = 2199), from
+`scripts/compare-formats.sh`. Slot F1 is by value, `scoped` is intent-scoped, and
+`exact` compares character spans.
+
+### Few-Shot
+
+| Model          | Format   | Intent F1 | Slot F1 | Slot F1 scoped | Slot F1 exact | Exact match | Well formed | Faithful |
+| -------------- | -------- | --------- | ------- | -------------- | ------------- | ----------- | ----------- | -------- |
+| Qwen3.5-2B     | `xml`    |    88.58% |  46.27% |         44.06% |        22.65% |       4.91% |      97.18% |   25.51% |
+| Qwen3.5-2B     | `offset` |    69.87% |   0.68% |          0.65% |         0.43% |       0.00% |      70.76% |   70.76% |
+| Qwen3.5-2B     | `dict`   |    82.48% |  43.51% |         42.19% |        42.16% |       3.55% |      99.68% |   99.68% |
+| _other models_ |          |           |         |                |               |             |             |          |
+
+Few-shot `xml` rarely copies the utterance back faithfully (25.5%), which is
+why its exact-span slot F1 is about half its by-value score; `dict` copies slot
+text rather than the whole utterance and loses almost nothing. `offset` fails
+because the model cannot count characters, not because it misses the intents.
+
+### Fine-Tuned (LoRA)
+
+| Model          | Format   | Intent F1 | Slot F1 | Slot F1 scoped | Slot F1 exact | Exact match | Well formed | Faithful |
+| -------------- | -------- | --------- | ------- | -------------- | ------------- | ----------- | ----------- | -------- |
+| _to be added_  |          |           |         |                |               |             |             |          |
+
 ## Schemas
 
 A schema is a YAML file naming the intents, the slots each intent takes, and the
