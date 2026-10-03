@@ -65,7 +65,7 @@ def score(
     for gold, pred, utterance in zip(golds, preds, utterances):
         well_formed += not pred.malformed
         faithful += is_faithful(pred, utterance)
-        exact += _structure(gold) == _structure(pred)
+        exact += structure(gold) == structure(pred)
         for key, extract in _EXTRACTORS.items():
             counts[key] += _tally(extract(gold), extract(pred))
 
@@ -93,7 +93,8 @@ def _prf(counts: Counter) -> PRF:
     return PRF(precision, recall, 2 * precision * recall / denom if denom else 0.0)
 
 
-def _value(text: str) -> str:
+def value(text: str) -> str:
+    """A slot's text as it is compared: whitespace collapsed, lowercased."""
     return " ".join(text.split()).lower()
 
 
@@ -102,22 +103,22 @@ def _intents(a: Annotation) -> list:
 
 
 def _slots(a: Annotation) -> list:
-    return [(s.label, _value(s.text(a.text))) for i in a.intents for s in i.slots]
+    return [(s.label, value(s.text(a.text))) for i in a.intents for s in i.slots]
 
 
 def _slots_scoped(a: Annotation) -> list:
-    return [(i.label, s.label, _value(s.text(a.text))) for i in a.intents for s in i.slots]
+    return [(i.label, s.label, value(s.text(a.text))) for i in a.intents for s in i.slots]
 
 
 def _slot_spans(a: Annotation) -> list:
     return [(i.label, *s.key) for i in a.intents for s in i.slots]
 
 
-def _structure(a: Annotation) -> list:
+def structure(a: Annotation) -> list:
     """The annotation as ordered content, ignoring the text between spans."""
     if a.malformed:
         return []
-    return [(i.label, tuple((s.label, _value(s.text(a.text))) for s in i.slots)) for i in a.intents]
+    return [(i.label, tuple((s.label, value(s.text(a.text))) for s in i.slots)) for i in a.intents]
 
 
 _EXTRACTORS = {
