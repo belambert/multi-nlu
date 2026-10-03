@@ -63,7 +63,8 @@ class Diff:
         lines = [f"{_badge(self.status)} {self.utterance}"]
         if self.status is Status.MALFORMED:
             lines.append(_row("got", self.output))  # nothing parsed, so this is all there is
-        elif not self.faithful:
+            return "\n".join(lines)
+        if not self.faithful:
             lines.extend(drift(self.utterance, self.copied))
         for name, items in (("intents", self.intents), ("slots", self.slots)):
             if items:
