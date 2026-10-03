@@ -1,10 +1,11 @@
 """LoRA fine-tuning of a causal LM to emit annotations in a chosen format."""
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Sequence
 
 import torch
+import wandb
 from peft import LoraConfig, get_peft_model
 from transformers import PreTrainedTokenizerBase, Trainer, TrainingArguments
 
@@ -43,6 +44,8 @@ class TrainConfig:
     log_steps: int = 20
     seed: int = 0
     device: str | None = field(default=None)
+    wandb: bool = True
+    wandb_project: str = "multi-nlu"
 
 
 def train(
@@ -68,6 +71,10 @@ def train(
     )
     model.print_trainable_parameters()
 
+    if config.wandb:
+        hyper = {k: str(v) if isinstance(v, Path) else v for k, v in asdict(config).items()}
+        wandb.init(project=config.wandb_project, config=hyper, name=config.out_dir.name)
+
     args = TrainingArguments(
         output_dir=str(config.out_dir),
         num_train_epochs=config.epochs,
@@ -82,7 +89,7 @@ def train(
         eval_steps=config.eval_steps,
         save_strategy="no",
         bf16=device.type == "cuda" and torch.cuda.is_bf16_supported(),
-        report_to=[],
+        report_to="wandb" if config.wandb else "none",
         seed=config.seed,
     )
 

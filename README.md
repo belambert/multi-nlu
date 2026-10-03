@@ -61,6 +61,10 @@ through the same one:
 
     uv run multi-nlu train --format xml -o runs/xml
 
+Training logs to Weights & Biases by default (project `multi-nlu`), tracking
+the hyperparameters and loss curves; pass `--no-wandb` to disable it and
+`--wandb-project` to log elsewhere.
+
 Predictions can be saved and re-scored without rerunning the model; each row
 records the format that produced it, so `score` needs no flags:
 
@@ -176,7 +180,7 @@ annotations — and pass it to any command:
 
 - [ ] Compare all three formats
 - [ ] Do the modeling with an encoder model
-- [ ] add wandb/trackio
+- [x] add wandb/trackio
 - [ ] Evaluation? Does order matter?
 - [ ] Fix the 2 train rows whose slot span overruns its intent span (dataset repo)
 - [ ] what else?
