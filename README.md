@@ -103,12 +103,12 @@ new schema. Every command takes `--help`.
 
 ### Comparing formats
 
-`scripts/compare-formats.sh` runs `predict` on the same model and sample once
-per format, printing each one's scores in turn:
+`scripts/compare-formats.sh` runs `predict` on the same sample once per format
+for each instruct Qwen3.5 model under 40B, printing each one's scores in turn:
 
     ./scripts/compare-formats.sh
 
-Edit the model or args in the script directly to compare something else.
+Edit the models or args in the script directly to compare something else.
 
 The device is chosen automatically — cuda, then mps, then cpu — and `--device`
 overrides it. Training uses bf16 on cuda and fp32 elsewhere.

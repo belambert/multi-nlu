@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
-# Compare xml/dict on the same model, split and sample.
+# Compare xml/dict on each instruct Qwen3.5 model under 40B, same split and sample.
 set -euo pipefail
 
-model="Qwen/Qwen3.5-2B"
+models=(
+    Qwen/Qwen3.5-0.8B
+    Qwen/Qwen3.5-2B
+    Qwen/Qwen3.5-4B
+    Qwen/Qwen3.5-9B
+    Qwen/Qwen3.5-27B
+    Qwen/Qwen3.5-35B-A3B
+)
 
-for format in xml dict; do
-    echo "== $format =="
-    uv run multi-nlu predict -m "$model" --format "$format" --shots 8 --split test
-    echo
+for model in "${models[@]}"; do
+    for format in xml dict; do
+        echo "== $model $format =="
+        uv run multi-nlu predict -m "$model" --format "$format" --shots 8 --split test
+        echo
+    done
 done
