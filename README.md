@@ -74,18 +74,9 @@ themselves — `errors` for the ones that went wrong, `all` for every one:
 
 Each example shows its status and a diff of its intents and slots. Matches
 collapse to a count so the errors stand out, one per line; `-` marks something
-gold had and the prediction missed, `+` something the prediction invented:
+gold had and the prediction missed, `+` something the prediction invented.
 
-    ~ partial   add this ruth crawford seeger song to my playlist
-      intents   ✓1
-      slots     ✓3
-                -AddToPlaylist.artist='ruth crawford seeger'
-                -AddToPlaylist.music_item='song'
-                +AddToPlaylist.music_item='this ruth crawford seeger song'
-    ────────────────────────────────────────────────────────────────────────────
-
-Reading a `-` against the `+` under it usually names the mistake: here the
-prediction swallowed the artist into the music item instead of splitting them.
+Reading a `-` against the `+` under it usually names the mistake.
 
 A `correct` example matches gold on every intent and slot, `partial` gets some
 of them, `wrong` none, and `malformed` did not parse at all. Each status has its
