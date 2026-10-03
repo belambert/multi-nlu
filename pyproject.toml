@@ -16,6 +16,7 @@ dependencies = [
     "tqdm>=4.66",
     "transformers>=4.51",
     "typer>=0.15",
+    "wandb>=0.19",
 ]
 
 [project.scripts]

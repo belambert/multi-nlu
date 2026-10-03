@@ -108,6 +108,12 @@ def train(
     lora_r: int = 16,
     max_len: int = 1024,
     device: Annotated[Optional[str], typer.Option()] = None,
+    wandb: Annotated[
+        bool, typer.Option("--wandb/--no-wandb", help="Log training to Weights & Biases.")
+    ] = True,
+    wandb_project: Annotated[
+        str, typer.Option("--wandb-project", help="wandb project to log to.")
+    ] = "multi-nlu",
     seed: int = 0,
 ) -> None:
     """Fine-tune a LoRA adapter on the train split."""
@@ -126,6 +132,8 @@ def train(
         max_len=max_len,
         device=device,
         seed=seed,
+        wandb=wandb,
+        wandb_project=wandb_project,
     )
     run(
         task,
