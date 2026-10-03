@@ -110,6 +110,18 @@ Other commands: `show` prints annotated examples in a format and the system
 prompt, `formats` and `schemas` list what is bundled, `derive-schema` builds a
 new schema. Every command takes `--help`.
 
+### Comparing formats
+
+`scripts/compare-formats.sh` runs `predict` once per registered format against
+one model and the same sampled examples, then prints a metrics table side by
+side:
+
+    ./scripts/compare-formats.sh -m Qwen/Qwen3-1.7B --shots 8 --split test -n 200
+
+It discovers formats from `multi-nlu formats`, so it keeps working as more are
+added; `--formats xml,offset` compares a subset. Each format's predictions land
+in `runs/compare/<format>.jsonl` for later inspection with `multi-nlu score`.
+
 The device is chosen automatically — cuda, then mps, then cpu — and `--device`
 overrides it. Training uses bf16 on cuda and fp32 elsewhere.
 
