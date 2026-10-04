@@ -149,19 +149,33 @@ Few-shot prompting (8 shots) on the full test split (n = 2199), from
 
 | Model          | Format   | Intent F1 | Slot F1 | Slot F1 scoped | Slot F1 exact | Exact match | Well formed | Faithful |
 | -------------- | -------- | --------- | ------- | -------------- | ------------- | ----------- | ----------- | -------- |
+| Qwen3.5-0.8B   | `xml`    |    77.49% |  34.04% |         31.56% |        13.53% |       2.32% |      85.45% |   15.01% |
+| Qwen3.5-0.8B   | `dict`   |    80.61% |  35.78% |         32.99% |        32.92% |       2.09% |      87.86% |   87.86% |
 | Qwen3.5-2B     | `xml`    |    88.58% |  46.27% |         44.06% |        22.65% |       4.91% |      97.18% |   25.51% |
 | Qwen3.5-2B     | `dict`   |    82.48% |  43.51% |         42.19% |        42.16% |       3.55% |      99.68% |   99.68% |
+| Qwen3.5-4B     | `xml`    |    88.88% |  65.14% |         63.78% |        51.07% |      15.19% |      98.41% |   68.44% |
+| Qwen3.5-4B     | `dict`   |    93.19% |  65.43% |         64.42% |        64.39% |       9.10% |     100.00% |  100.00% |
+| Qwen3.5-9B     | `xml`    |    92.87% |  69.34% |         68.37% |        57.76% |      19.46% |      99.14% |   75.17% |
+| Qwen3.5-9B     | `dict`   |    93.65% |  69.04% |         68.55% |        68.51% |      12.14% |     100.00% |  100.00% |
 | _other models_ |          |           |         |                |               |             |             |          |
 
-Few-shot `xml` rarely copies the utterance back faithfully (25.5%), which is
-why its exact-span slot F1 is about half its by-value score; `dict` copies slot
-text rather than the whole utterance and loses almost nothing.
+Few-shot `xml` rarely copies the utterance back faithfully (15-75%), which is
+why its exact-span slot F1 trails its by-value score; `dict` copies slot text
+rather than the whole utterance and loses almost nothing. Scale helps slots
+(35% at 0.8B, 69% at 9B), but exact match stays low (at most 19.5%).
 
 ### Fine-Tuned (LoRA)
 
 | Model          | Format   | Intent F1 | Slot F1 | Slot F1 scoped | Slot F1 exact | Exact match | Well formed | Faithful |
 | -------------- | -------- | --------- | ------- | -------------- | ------------- | ----------- | ----------- | -------- |
-| _to be added_  |          |           |         |                |               |             |             |          |
+| Qwen3.5-0.8B   | `xml`    |    98.17% |  95.35% |         95.12% |        94.86% |      79.90% |     100.00% |   99.32% |
+| Qwen3.5-0.8B   | `dict`   |    98.28% |  95.58% |         95.45% |        95.36% |      79.40% |     100.00% |  100.00% |
+| _other models_ |          |           |         |                |               |             |             |          |
+
+One epoch of LoRA on the 0.8B model beats few-shot 9B by about 26 points of
+slot F1 and lifts exact match from 12-19% to about 80%. It also closes the
+format gap: `xml` and `dict` land within 0.5 points on every score, and both are
+fully well formed.
 
 ## Schemas
 
