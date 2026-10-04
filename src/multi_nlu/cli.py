@@ -222,6 +222,7 @@ def tag_predict(
     seed: int = 0,
 ) -> None:
     """Tag a split with a trained tagger, then score the result."""
+    from multi_nlu.models import pick_device
     from multi_nlu.tagger import load
     from multi_nlu.tagger import predict as run
 
@@ -230,7 +231,9 @@ def tag_predict(
     model_, tok = load(tagger, device)
 
     # rendered as xml so saved predictions re-score and diff like generated ones
-    annotations = run([e.text for e in examples], model_, tok, task, batch_size)
+    annotations, secs = _timed(
+        pick_device(device), lambda: run([e.text for e in examples], model_, tok, task, batch_size)
+    )
     preds = [
         Prediction(e.text, fmt.render(a), gold=fmt.render(e.annotation), format=fmt.name)
         for a, e in zip(annotations, examples)
@@ -241,7 +244,7 @@ def tag_predict(
         out.write_text("\n".join(json.dumps(vars(p)) for p in preds) + "\n")
         typer.echo(f"wrote {len(preds)} predictions to {out}")
 
-    typer.echo(_report(preds, detail))
+    typer.echo(_report(preds, detail) + "\n" + _per_utterance(secs, len(examples)))
 
 
 @app.command(name="derive-schema")
