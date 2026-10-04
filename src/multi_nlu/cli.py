@@ -1,8 +1,10 @@
 """Command line interface."""
 
 import json
+import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import TYPE_CHECKING, Annotated, Optional
 
 import typer
 
@@ -12,6 +14,9 @@ from multi_nlu.formats import DEFAULT, format_names, get_format
 from multi_nlu.predict import Prediction
 from multi_nlu.report import Detail
 from multi_nlu.schema import DatasetSpec, builtin_schemas, derive_schema, load_schema
+
+if TYPE_CHECKING:
+    import torch
 
 app = typer.Typer(help="Multi-intent NLU with generative language models.", no_args_is_help=True)
 
@@ -62,10 +67,13 @@ def predict(
     examples = load_examples(task, split, limit, seed)
     demos = sample_shots(load_examples(task, "train"), shots, seed) if shots else []
 
-    model_, tokenizer, _ = load_model(
+    model_, tokenizer, dev = load_model(
         model, adapter=str(adapter) if adapter else None, device=device
     )
-    generations = run([e.text for e in examples], model_, tokenizer, task, fmt, demos, batch_size)
+    generations, secs = _timed(
+        dev,
+        lambda: run([e.text for e in examples], model_, tokenizer, task, fmt, demos, batch_size),
+    )
     preds = [
         Prediction(p.text, p.output, gold=fmt.render(e.annotation), format=fmt.name)
         for p, e in zip(generations, examples)
@@ -76,7 +84,7 @@ def predict(
         out.write_text("\n".join(json.dumps(vars(p)) for p in preds) + "\n")
         typer.echo(f"wrote {len(preds)} predictions to {out}")
 
-    typer.echo(_report(preds, detail))
+    typer.echo(_report(preds, detail) + "\n" + _per_utterance(secs, len(examples)))
 
 
 @app.command()
@@ -227,6 +235,31 @@ def _report(preds: list[Prediction], detail: Detail = Detail.NONE) -> str:
     diffs = [report.diff(g, a, p.text, p.output) for g, a, p in zip(golds, predicted, graded)]
     shown = [d for d in diffs if detail is Detail.ALL or d.status is not report.Status.CORRECT]
     return report.render_all(shown) + "\n".join([report.summarize(diffs), scores.summary()])
+
+
+def _timed[T](dev: "torch.device", fn: Callable[[], T]) -> tuple[T, float]:
+    """Call fn, returning its result and the wall-clock seconds it took on dev."""
+    _sync(dev)
+    start = time.perf_counter()
+    result = fn()
+    _sync(dev)
+    return result, time.perf_counter() - start
+
+
+def _sync(dev: "torch.device") -> None:
+    # gpu kernels run asynchronously, so wait for them before reading the clock
+    import torch
+
+    if dev.type == "cuda":
+        torch.cuda.synchronize(dev)
+    elif dev.type == "mps":
+        torch.mps.synchronize()
+
+
+def _per_utterance(secs: float, n: int) -> str:
+    """A summary line, aligned with the scores, for the mean inference time."""
+    # 23 is the widest name in Scores.summary
+    return f"{'time / utterance':<23}  {1000 * secs / max(n, 1):6.1f} ms"
 
 
 def main() -> None:
