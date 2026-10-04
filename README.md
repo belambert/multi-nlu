@@ -208,6 +208,21 @@ slot F1 and lifts exact match from 12-19% to about 80%. It also closes the
 format gap: `xml` and `dict` land within 0.5 points on every score, and both are
 fully well formed.
 
+### Token Tagger
+
+Three epochs of full fine-tuning with `tag-train` defaults, scored by
+`tag-predict` on the full test split.
+
+| Backbone        | Intent F1 | Slot F1 | Slot F1 scoped | Slot F1 exact | Exact match | Well formed | Faithful |
+| --------------- | --------- | ------- | -------------- | ------------- | ----------- | ----------- | -------- |
+| ModernBERT-base |    98.18% |  96.03% |         95.84% |        95.84% |      83.17% |     100.00% |  100.00% |
+| _other models_  |           |         |                |               |             |             |          |
+
+The 149M-parameter ModernBERT tagger beats LoRA Qwen3.5-0.8B on every score,
+by about 3 points of exact match. It also tags in 2.7 ms per utterance on
+Apple-silicon mps at batch size 64, since it needs one forward pass and no
+generation.
+
 ## Schemas
 
 A schema is a YAML file naming the intents, the slots each intent takes, and the
