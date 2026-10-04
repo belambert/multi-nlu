@@ -153,6 +153,97 @@ def train(
     typer.echo(f"saved adapter to {out}")
 
 
+@app.command(name="tag-train")
+def tag_train(
+    model: ModelOpt = "answerdotai/ModernBERT-base",
+    schema: SchemaOpt = "mixsnips",
+    out: Annotated[Path, typer.Option("--out", "-o", help="Tagger output directory.")] = Path(
+        "runs/tagger"
+    ),
+    limit: LimitOpt = None,
+    eval_limit: Annotated[
+        int, typer.Option("--eval-limit", help="Validation examples to track loss on.")
+    ] = 500,
+    epochs: float = 3.0,
+    batch_size: Annotated[int, typer.Option("--batch-size", "-b")] = 32,
+    lr: float = 5e-5,
+    slot_weight: Annotated[
+        float, typer.Option(help="Weight of the slot loss against the intent loss.")
+    ] = 1.0,
+    device: Annotated[Optional[str], typer.Option()] = None,
+    wandb: Annotated[
+        bool, typer.Option("--wandb/--no-wandb", help="Log training to Weights & Biases.")
+    ] = True,
+    wandb_project: Annotated[
+        str, typer.Option("--wandb-project", help="wandb project to log to.")
+    ] = "multi-nlu",
+    seed: int = 0,
+) -> None:
+    """Fine-tune a token tagger: one head for intent spans, one for slots."""
+    from multi_nlu.tagger import TagConfig
+    from multi_nlu.tagger import train as run
+
+    task = load_schema(schema)
+    config = TagConfig(
+        model_id=model,
+        out_dir=out,
+        epochs=epochs,
+        batch_size=batch_size,
+        lr=lr,
+        slot_weight=slot_weight,
+        device=device,
+        seed=seed,
+        wandb=wandb,
+        wandb_project=wandb_project,
+    )
+    run(
+        task,
+        load_examples(task, "train", limit, seed),
+        load_examples(task, "validation", eval_limit, seed),
+        config,
+    )
+    typer.echo(f"saved tagger to {out}")
+
+
+@app.command(name="tag-predict")
+def tag_predict(
+    tagger: Annotated[Path, typer.Option("--tagger", "-t", help="Directory from `tag-train`.")],
+    schema: SchemaOpt = "mixsnips",
+    split: SplitOpt = "test",
+    limit: LimitOpt = None,
+    batch_size: Annotated[int, typer.Option("--batch-size", "-b")] = 64,
+    device: Annotated[
+        Optional[str], typer.Option(help="cpu, mps or cuda; auto by default.")
+    ] = None,
+    out: Annotated[
+        Optional[Path], typer.Option("--out", "-o", help="Write predictions as JSONL.")
+    ] = None,
+    detail: DetailOpt = Detail.NONE,
+    seed: int = 0,
+) -> None:
+    """Tag a split with a trained tagger, then score the result."""
+    from multi_nlu.tagger import load
+    from multi_nlu.tagger import predict as run
+
+    task, fmt = load_schema(schema), get_format("xml")
+    examples = load_examples(task, split, limit, seed)
+    model_, tok = load(tagger, device)
+
+    # rendered as xml so saved predictions re-score and diff like generated ones
+    annotations = run([e.text for e in examples], model_, tok, task, batch_size)
+    preds = [
+        Prediction(e.text, fmt.render(a), gold=fmt.render(e.annotation), format=fmt.name)
+        for a, e in zip(annotations, examples)
+    ]
+
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text("\n".join(json.dumps(vars(p)) for p in preds) + "\n")
+        typer.echo(f"wrote {len(preds)} predictions to {out}")
+
+    typer.echo(_report(preds, detail))
+
+
 @app.command(name="derive-schema")
 def derive(
     dataset: Annotated[str, typer.Argument(help="Hugging Face dataset path.")],

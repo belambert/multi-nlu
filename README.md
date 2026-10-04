@@ -41,8 +41,9 @@ approach means adding one `Format` and nothing else. `--format` picks one, and
 | `xml`    | done   | the utterance copied verbatim with inline XML tags added                                 |
 | `dict`   | done   | `[{"PlayMusic": {"genre": …}}]`, slots copied verbatim; a repeated slot label collapses  |
 
-`xml` and `dict` both exist today, and an encoder-based baseline sits outside
-this interface.
+`xml` and `dict` both exist today. The [token tagger](#token-tagger) baseline
+sits outside this interface, since it classifies tokens instead of generating
+text.
 
 ## Use
 
@@ -116,6 +117,36 @@ Edit the models or args in the script directly to compare something else.
 
 The device is chosen automatically — cuda, then mps, then cpu — and `--device`
 overrides it. Training uses bf16 on cuda and fp32 elsewhere.
+
+### Token Tagger
+
+The non-generative baseline is a BERT-style sequence tagger with two heads on
+a shared backbone. One head tags intent spans and the other tags slots, each
+with BIO labels over subword tokens:
+
+    book    a       table   in      ames    and  play         jazz
+    B-Book  I-Book  I-Book  I-Book  I-Book  O    B-PlayMusic  I-PlayMusic
+    O       O       O       O       B-city  O    O            B-genre
+
+Intents never nest, and slots sit inside intents, so these two flat layers
+capture the whole annotation. Decoding puts each slot under the intent span
+that contains it. A slot just outside every intent stretches the nearest one to
+cover it, and a slot the schema doesn't allow under its intent is dropped. The
+loss is the sum of both heads' cross-entropies; `--slot-weight` rebalances it.
+
+    uv run multi-nlu tag-train -m answerdotai/ModernBERT-base -o runs/tagger
+    uv run multi-nlu tag-predict -t runs/tagger --split test -o preds.jsonl
+
+`tag-predict` writes the same JSONL as `predict`, rendered through `xml`, so
+`score` and `--detail` work on it unchanged. A tagger is well formed and
+faithful by construction.
+
+Any backbone `AutoModel` can load works, decoders included.
+`scripts/compare-taggers.sh` trains and scores ModernBERT, BERT, RoBERTa and
+Qwen3.5-0.8B. Qwen tags with left context only, which is the point of the
+comparison:
+
+    ./scripts/compare-taggers.sh
 
 ## Metrics
 
@@ -207,7 +238,8 @@ annotations — and pass it to any command:
 ## TODO
 
 - [ ] Compare both formats
-- [ ] Do the modeling with an encoder model
+- [x] Do the modeling with an encoder model
+- [ ] Bidirectional attention for decoder taggers, to separate the weights from the mask
 - [x] add wandb/trackio
 - [ ] Evaluation? Does order matter?
 - [ ] Fix the 2 train rows whose slot span overruns its intent span (dataset repo)
@@ -229,6 +261,8 @@ annotations — and pass it to any command:
         metrics.py      scoring, on annotations rather than text
         report.py       per-example diffs of gold against a prediction
         train.py        LoRA fine-tuning
+        tagging.py      spans as two layers of BIO tags, and back
+        tagger.py       the two-headed token tagger: model, training, prediction
         cli.py          command line interface
 
 ## Development
@@ -236,7 +270,8 @@ annotations — and pass it to any command:
     uv run pytest
     uv run black . && uv run isort . && uv run mypy src
 
-The tests cover the span model, the `xml` and `dict` formats,
+The tests cover the span model, the `xml` and `dict` formats, BIO tagging,
 scoring, per-example diffs, prompting and schema handling, and need neither a
-model nor a GPU; one `dict` test pulls real examples from the dataset to check
-round-trip fidelity, so it needs network access the first time it isn't cached.
+model nor a GPU. One `dict` test and one tagging test pull real examples from
+the dataset to check round-trip fidelity, so they need network access the first
+time it isn't cached.
