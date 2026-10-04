@@ -112,6 +112,10 @@ for each instruct Qwen3.5 model under 40B, printing each one's scores in turn:
 
     ./scripts/compare-formats.sh
 
+Predictions are saved as `predictions/few-shot/<model>-<format>.jsonl`; rescore
+one with `multi-nlu score`. `scripts/compare-finetuned.sh` does the same for
+LoRA fine-tunes, writing `predictions/finetuned/<model>-<format>.jsonl`.
+
 Edit the models or args in the script directly to compare something else.
 
 The device is chosen automatically — cuda, then mps, then cpu — and `--device`
