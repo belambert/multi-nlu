@@ -177,6 +177,7 @@ rather than the whole utterance and loses almost nothing. Scale helps slots
 | Qwen3.5-0.8B   | `dict`   |    98.28% |  95.58% |         95.45% |        95.36% |      79.40% |     100.00% |  100.00% |
 | Qwen3.5-2B     | `xml`    |    98.79% |  95.57% |         95.51% |        95.16% |      79.99% |     100.00% |   99.32% |
 | Qwen3.5-2B     | `dict`   |    98.63% |  95.78% |         95.70% |        95.70% |      80.99% |     100.00% |  100.00% |
+| _other models_ |          |           |         |                |               |             |             |          |
 
 One epoch of LoRA on the 0.8B model beats few-shot 27B by about 15 points of
 slot F1 and lifts exact match from 27-33% to about 80%. It also closes the
