@@ -160,6 +160,7 @@ Few-shot prompting (8 shots) on the full test split (n = 2199), from
 | Qwen3.5-27B     | `xml`  |    95.68% |  80.48% |         80.11% |        76.40% |      33.42% |      99.91% |   91.72% |
 | Qwen3.5-27B     | `dict` |    95.90% |  80.40% |         80.11% |        80.07% |      26.65% |     100.00% |  100.00% |
 | Qwen3.5-35B-A3B | `xml`  |    90.29% |  74.83% |         73.95% |        67.65% |      25.42% |      95.45% |   82.86% |
+| Qwen3.5-35B-A3B | `dict` |    94.16% |  74.76% |         74.36% |        74.35% |      19.87% |      99.23% |   99.23% |
 | _other models_  |        |           |         |                |               |             |             |          |
 
 Few-shot `xml` rarely copies the utterance back faithfully (15-92%), which is
