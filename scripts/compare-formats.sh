@@ -2,6 +2,10 @@
 # Compare xml/dict on each instruct Qwen3.5 model under 40B, same split and sample.
 set -euo pipefail
 
+# keep nohup logs small: redraw bars once a minute, in ascii, and hide HF download bars
+export TQDM_MININTERVAL="${TQDM_MININTERVAL:-60}" TQDM_ASCII="${TQDM_ASCII:-1}"
+export HF_HUB_DISABLE_PROGRESS_BARS="${HF_HUB_DISABLE_PROGRESS_BARS:-1}"
+
 models=(
     Qwen/Qwen3.5-0.8B
     Qwen/Qwen3.5-2B

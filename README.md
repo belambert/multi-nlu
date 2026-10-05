@@ -147,27 +147,27 @@ Few-shot prompting (8 shots) on the full test split (n = 2199), from
 
 ### Few-Shot
 
-| Model           | Format   | Intent F1 | Slot F1 | Slot F1 scoped | Slot F1 exact | Exact match | Well formed | Faithful |
-| --------------- | -------- | --------- | ------- | -------------- | ------------- | ----------- | ----------- | -------- |
-| Qwen3.5-0.8B    | `xml`    |    77.49% |  34.04% |         31.56% |        13.53% |       2.32% |      85.45% |   15.01% |
-| Qwen3.5-0.8B    | `dict`   |    80.61% |  35.78% |         32.99% |        32.92% |       2.09% |      87.86% |   87.86% |
-| Qwen3.5-2B      | `xml`    |    88.58% |  46.27% |         44.06% |        22.65% |       4.91% |      97.18% |   25.51% |
-| Qwen3.5-2B      | `dict`   |    82.48% |  43.51% |         42.19% |        42.16% |       3.55% |      99.68% |   99.68% |
-| Qwen3.5-4B      | `xml`    |    88.88% |  65.14% |         63.78% |        51.07% |      15.19% |      98.41% |   68.44% |
-| Qwen3.5-4B      | `dict`   |    93.19% |  65.43% |         64.42% |        64.39% |       9.10% |     100.00% |  100.00% |
-| Qwen3.5-9B      | `xml`    |    92.87% |  69.34% |         68.37% |        57.76% |      19.46% |      99.14% |   75.17% |
-| Qwen3.5-9B      | `dict`   |    93.65% |  69.04% |         68.55% |        68.51% |      12.14% |     100.00% |  100.00% |
-| Qwen3.5-27B     | `xml`    |    95.68% |  80.48% |         80.11% |        76.40% |      33.42% |      99.91% |   91.72% |
-| Qwen3.5-27B     | `dict`   |    95.90% |  80.40% |         80.11% |        80.07% |      26.65% |     100.00% |  100.00% |
-| Qwen3.5-35B-A3B | `xml`    |    90.29% |  74.83% |         73.95% |        67.65% |      25.42% |      95.45% |   82.86% |
-| Qwen3.5-35B-A3B | `dict`   |    94.16% |  74.76% |         74.36% |        74.35% |      19.87% |      99.23% |   99.23% |
-| _other models_  |          |           |         |                |               |             |             |          |
+| Model           | Format | Intent F1 | Slot F1 | Slot F1 scoped | Slot F1 exact | Exact match | Well formed | Faithful |
+| --------------- | ------ | --------- | ------- | -------------- | ------------- | ----------- | ----------- | -------- |
+| Qwen3.5-0.8B    | `xml`  |    77.49% |  34.04% |         31.56% |        13.53% |       2.32% |      85.45% |   15.01% |
+| Qwen3.5-0.8B    | `dict` |    80.61% |  35.78% |         32.99% |        32.92% |       2.09% |      87.86% |   87.86% |
+| Qwen3.5-2B      | `xml`  |    88.58% |  46.27% |         44.06% |        22.65% |       4.91% |      97.18% |   25.51% |
+| Qwen3.5-2B      | `dict` |    82.48% |  43.51% |         42.19% |        42.16% |       3.55% |      99.68% |   99.68% |
+| Qwen3.5-4B      | `xml`  |    88.88% |  65.14% |         63.78% |        51.07% |      15.19% |      98.41% |   68.44% |
+| Qwen3.5-4B      | `dict` |    93.19% |  65.43% |         64.42% |        64.39% |       9.10% |     100.00% |  100.00% |
+| Qwen3.5-9B      | `xml`  |    92.87% |  69.34% |         68.37% |        57.76% |      19.46% |      99.14% |   75.17% |
+| Qwen3.5-9B      | `dict` |    93.65% |  69.04% |         68.55% |        68.51% |      12.14% |     100.00% |  100.00% |
+| Qwen3.5-27B     | `xml`  |    95.68% |  80.48% |         80.11% |        76.40% |      33.42% |      99.91% |   91.72% |
+| Qwen3.5-27B     | `dict` |    95.90% |  80.40% |         80.11% |        80.07% |      26.65% |     100.00% |  100.00% |
+| Qwen3.5-35B-A3B | `xml`  |    90.29% |  74.83% |         73.95% |        67.65% |      25.42% |      95.45% |   82.86% |
+| _other models_  |        |           |         |                |               |             |             |          |
 
 Few-shot `xml` rarely copies the utterance back faithfully (15-92%), which is
 why its exact-span slot F1 trails its by-value score; `dict` copies slot text
 rather than the whole utterance and loses almost nothing. Scale helps slots
-(35% at 0.8B, 80% at 27B), but exact match stays low (at most 33%). The
-35B-A3B mixture-of-experts model lands below the dense 27B on every score.
+(35% at 0.8B, 80% at 27B), but exact match stays low (at most 33.4%). The
+35B-A3B mixture-of-experts model trails the dense 27B and is less well formed
+(95% against 99.9-100%).
 
 ### Fine-Tuned (LoRA)
 
@@ -182,8 +182,9 @@ rather than the whole utterance and loses almost nothing. Scale helps slots
 One epoch of LoRA on the 0.8B model beats few-shot 27B by about 15 points of
 slot F1 and lifts exact match from 27-33% to about 80%. It also closes the
 format gap: `xml` and `dict` land within 0.5 points on every score, and both are
-fully well formed. Going from 0.8B to 2B adds almost nothing (under 0.5 points
-of slot F1, about 1 point of exact match).
+fully well formed. Going from 0.8B to 2B adds little (about 0.2 points of slot
+F1 and up to 1.6 points of exact match), so the gain from scale is small once the
+model is fine-tuned.
 
 ## Schemas
 
