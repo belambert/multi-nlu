@@ -161,7 +161,6 @@ Few-shot prompting (8 shots) on the full test split (n = 2199), from
 | Qwen3.5-27B     | `dict` |    95.90% |  80.40% |         80.11% |        80.07% |      26.65% |     100.00% |  100.00% |
 | Qwen3.5-35B-A3B | `xml`  |    90.29% |  74.83% |         73.95% |        67.65% |      25.42% |      95.45% |   82.86% |
 | Qwen3.5-35B-A3B | `dict` |    94.16% |  74.76% |         74.36% |        74.35% |      19.87% |      99.23% |   99.23% |
-| _other models_  |        |           |         |                |               |             |             |          |
 
 Few-shot `xml` rarely copies the utterance back faithfully (15-92%), which is
 why its exact-span slot F1 trails its by-value score; `dict` copies slot text
@@ -178,7 +177,6 @@ rather than the whole utterance and loses almost nothing. Scale helps slots
 | Qwen3.5-0.8B   | `dict`   |    98.28% |  95.58% |         95.45% |        95.36% |      79.40% |     100.00% |  100.00% |
 | Qwen3.5-2B     | `xml`    |    98.79% |  95.57% |         95.51% |        95.16% |      79.99% |     100.00% |   99.32% |
 | Qwen3.5-2B     | `dict`   |    98.63% |  95.78% |         95.70% |        95.70% |      80.99% |     100.00% |  100.00% |
-| _other models_ |          |           |         |                |               |             |             |          |
 
 One epoch of LoRA on the 0.8B model beats few-shot 27B by about 15 points of
 slot F1 and lifts exact match from 27-33% to about 80%. It also closes the
