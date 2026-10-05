@@ -177,8 +177,8 @@ rather than the whole utterance and loses almost nothing. Scale helps slots
 One epoch of LoRA on the 0.8B model beats few-shot 9B by about 26 points of
 slot F1 and lifts exact match from 12-19% to about 80%. It also closes the
 format gap: `xml` and `dict` land within 0.5 points on every score, and both are
-fully well formed. Going from 0.8B to 2B adds little (under 0.5 points of slot
-F1 and about 1 point of exact match), so the gain from scale is small once the
+fully well formed. Going from 0.8B to 2B adds little (about 0.2 points of slot
+F1 and up to 1.6 points of exact match), so the gain from scale is small once the
 model is fine-tuned.
 
 ## Schemas
