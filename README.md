@@ -177,14 +177,23 @@ rather than the whole utterance and loses almost nothing. Scale helps slots
 | Qwen3.5-0.8B   | `dict`   |    98.28% |  95.58% |         95.45% |        95.36% |      79.40% |     100.00% |  100.00% |
 | Qwen3.5-2B     | `xml`    |    98.79% |  95.57% |         95.51% |        95.16% |      79.99% |     100.00% |   99.32% |
 | Qwen3.5-2B     | `dict`   |    98.63% |  95.78% |         95.70% |        95.70% |      80.99% |     100.00% |  100.00% |
+| Qwen3.5-4B     | `xml`    |    98.56% |  96.55% |         96.39% |        96.39% |      84.36% |     100.00% |  100.00% |
+| Qwen3.5-4B     | `dict`   |    98.29% |  96.50% |         96.33% |        96.33% |      83.81% |     100.00% |  100.00% |
+| Qwen3.5-9B     | `xml`    |    98.56% |  96.99% |         96.98% |        96.86% |      86.40% |     100.00% |   99.73% |
+| Qwen3.5-9B     | `dict`   |    98.72% |  96.75% |         96.74% |        96.74% |      84.95% |     100.00% |  100.00% |
 | _other models_ |          |           |         |                |               |             |             |          |
 
 One epoch of LoRA on the 0.8B model beats few-shot 27B by about 15 points of
 slot F1 and lifts exact match from 27-33% to about 80%. It also closes the
-format gap: `xml` and `dict` land within 0.5 points on every score, and both are
-fully well formed. Going from 0.8B to 2B adds little (about 0.2 points of slot
-F1 and up to 1.6 points of exact match), so the gain from scale is small once the
-model is fine-tuned.
+format gap: `xml` and `dict` land within 0.5 points on intent and slot F1 at
+every size, and both are fully well formed. Exact match differs more (up to 1.5
+points, favoring `xml` at 4B and 9B).
+
+Scale helps only modestly once the model is fine-tuned. Going from 0.8B to 2B
+adds about 0.2 points of slot F1 and up to 1.6 points of exact match; 2B to 4B
+adds 0.7-1.0 points of slot F1 and 2.8-4.4 points of exact match; 4B to 9B adds
+0.3-0.4 points of slot F1 and 1.1-2.0 points of exact match, reaching 86.4%
+exact match with `xml`.
 
 ## Schemas
 
