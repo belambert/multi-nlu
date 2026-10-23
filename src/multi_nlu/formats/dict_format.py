@@ -2,9 +2,8 @@
 
 import json
 
-from multi_nlu.annotation import Annotation, IntentSpan, Span
+from multi_nlu.annotation import Annotation, IntentSpan, Span, value
 from multi_nlu.formats.base import PREAMBLE, Format
-from multi_nlu.metrics import value
 
 INSTRUCTIONS = PREAMBLE + """
 

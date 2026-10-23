@@ -1,37 +1,16 @@
 """Batched annotation of utterances with a local model."""
 
-from dataclasses import dataclass
 from typing import Any, Iterator, Sequence
 
 import torch
 from tqdm import tqdm
 from transformers import PreTrainedTokenizerBase
 
-from multi_nlu.annotation import Annotation
 from multi_nlu.data import Example
-from multi_nlu.formats import DEFAULT, Format, get_format
+from multi_nlu.formats import Format
 from multi_nlu.prompts import build_messages
+from multi_nlu.report import Prediction
 from multi_nlu.schema import Schema
-
-
-@dataclass(frozen=True)
-class Prediction:
-    """One generation, with the format needed to read it back and its gold target."""
-
-    text: str
-    output: str
-    gold: str | None = None
-    format: str = DEFAULT
-
-    @property
-    def annotation(self) -> Annotation:
-        return get_format(self.format).parse(self.output, self.text)
-
-    @property
-    def gold_annotation(self) -> Annotation:
-        if self.gold is None:
-            raise ValueError("prediction carries no gold target")
-        return get_format(self.format).parse(self.gold, self.text)
 
 
 @torch.inference_mode()

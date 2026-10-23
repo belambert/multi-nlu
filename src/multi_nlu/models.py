@@ -1,5 +1,7 @@
-"""Loading models and tokenizers across cpu, mps and cuda."""
+"""Loading models and tokenizers, and timing them, across cpu, mps and cuda."""
 
+import time
+from collections.abc import Callable
 from typing import Any
 
 import torch
@@ -55,3 +57,20 @@ def load_tokenizer(model_id: str) -> PreTrainedTokenizerBase:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "left"
     return tokenizer
+
+
+def timed[T](dev: torch.device, fn: Callable[[], T]) -> tuple[T, float]:
+    """Call fn, returning its result and the wall-clock seconds it took on dev."""
+    _sync(dev)
+    start = time.perf_counter()
+    result = fn()
+    _sync(dev)
+    return result, time.perf_counter() - start
+
+
+def _sync(dev: torch.device) -> None:
+    # gpu kernels run asynchronously, so wait for them before reading the clock
+    if dev.type == "cuda":
+        torch.cuda.synchronize(dev)
+    elif dev.type == "mps":
+        torch.mps.synchronize()

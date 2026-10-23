@@ -1,7 +1,8 @@
-"""Per-example diffs: what one prediction got right, missed and invented.
+"""Reporting on predictions: aggregate scores and per-example diffs.
 
-The aggregate scores say how well a format did; these say where it went wrong,
-which is what you read when deciding what to change.
+The aggregate scores say how well a format did; the diffs say what each
+prediction got right, missed and invented, which is what you read when deciding
+what to change.
 """
 
 import shutil
@@ -13,8 +14,30 @@ from typing import Hashable, Iterable, Sequence
 
 import typer
 
-from multi_nlu.annotation import Annotation, is_faithful
-from multi_nlu.metrics import structure, value
+from multi_nlu import metrics
+from multi_nlu.annotation import Annotation, is_faithful, value
+from multi_nlu.formats import DEFAULT, get_format
+from multi_nlu.metrics import structure
+
+
+@dataclass(frozen=True)
+class Prediction:
+    """One generation, with the format needed to read it back and its gold target."""
+
+    text: str
+    output: str
+    gold: str | None = None
+    format: str = DEFAULT
+
+    @property
+    def annotation(self) -> Annotation:
+        return get_format(self.format).parse(self.output, self.text)
+
+    @property
+    def gold_annotation(self) -> Annotation:
+        if self.gold is None:
+            raise ValueError("prediction carries no gold target")
+        return get_format(self.format).parse(self.gold, self.text)
 
 
 class Status(StrEnum):
@@ -45,6 +68,23 @@ COLORS = {
     Status.WRONG: typer.colors.RED,
     Status.MALFORMED: typer.colors.MAGENTA,
 }
+
+
+def evaluate(preds: Sequence[Prediction], detail: Detail = Detail.NONE) -> str:
+    """The scores, optionally preceded by a diff of each example."""
+    graded = [p for p in preds if p.gold is not None]
+    if not graded:
+        return "no gold annotations to score against"
+
+    golds = [p.gold_annotation for p in graded]
+    predicted = [p.annotation for p in graded]
+    scores = metrics.score(golds, predicted, [p.text for p in graded])
+    if detail is Detail.NONE:
+        return scores.summary()
+
+    diffs = [diff(g, a, p.text, p.output) for g, a, p in zip(golds, predicted, graded)]
+    shown = [d for d in diffs if detail is Detail.ALL or d.status is not Status.CORRECT]
+    return render_all(shown) + "\n".join([summarize(diffs), scores.summary()])
 
 
 @dataclass(frozen=True)
