@@ -1,9 +1,10 @@
 """Scoring predicted annotations against gold, whatever format produced them.
 
 Everything here works on Annotations, so numbers from different formats are
-directly comparable. Generative models can drift from the input utterance, which
-shifts every character offset after the drift, so slot F1 compares span *values*
-as multisets rather than offsets.
+directly comparable. Every score is an error rate, so lower is better. Generative
+models can drift from the input utterance, which shifts every character offset
+after the drift, so slot errors compare span *values* as multisets rather than
+offsets.
 """
 
 from collections import Counter
@@ -16,35 +17,41 @@ LABEL = 16  # width of the summary's names, wide enough for the cli's timing lin
 
 
 @dataclass(frozen=True)
-class PRF:
-    precision: float
-    recall: float
-    f1: float
+class Errors:
+    """Missed and spurious items, each as a fraction of the gold count."""
+
+    missed: float
+    spurious: float
+
+    @property
+    def rate(self) -> float:
+        # a wrong label is one miss plus one spurious item, so this can pass 100%
+        return self.missed + self.spurious
 
 
 @dataclass(frozen=True)
 class Scores:
-    """Micro-averaged scores over a set of predictions."""
+    """Error rates over a set of predictions."""
 
     n: int
-    well_formed: float
-    faithful: float
-    exact_match: float
-    intent: PRF
-    slot: PRF
+    intent: Errors
+    slot: Errors
+    sentence: float
+    malformed: float
+    unfaithful: float
 
     def as_dict(self) -> dict:
         return asdict(self)
 
     def summary(self) -> str:
         rows = [
-            ("intent F1", self.intent.f1),
-            ("slot F1", self.slot.f1),
-            ("exact match", self.exact_match),
-            ("well formed", self.well_formed),
-            ("faithful", self.faithful),
+            ("intent errors", self.intent.rate, _split(self.intent)),
+            ("slot errors", self.slot.rate, _split(self.slot)),
+            ("sentence errors", self.sentence, ""),
+            ("malformed", self.malformed, ""),
+            ("unfaithful", self.unfaithful, ""),
         ]
-        lines = [f"{name:<{LABEL}}  {value:6.2%}" for name, value in rows]
+        lines = [f"{name:<{LABEL}}  {rate:6.2%}{split}" for name, rate, split in rows]
         return "\n".join([f"n = {self.n}", *lines])
 
 
@@ -56,23 +63,27 @@ def score(
         raise ValueError("golds, preds and utterances must be the same length")
 
     counts: dict[str, Counter] = {key: Counter() for key in _EXTRACTORS}
-    well_formed = faithful = exact = 0
+    malformed = unfaithful = wrong = 0
 
     for gold, pred, utterance in zip(golds, preds, utterances):
-        well_formed += not pred.malformed
-        faithful += is_faithful(pred, utterance)
-        exact += structure(gold) == structure(pred)
+        malformed += pred.malformed
+        unfaithful += not is_faithful(pred, utterance)
+        wrong += structure(gold) != structure(pred)
         for key, extract in _EXTRACTORS.items():
             counts[key] += _tally(extract(gold), extract(pred))
 
     n = len(golds) or 1
     return Scores(
         n=len(golds),
-        well_formed=well_formed / n,
-        faithful=faithful / n,
-        exact_match=exact / n,
-        **{key: _prf(c) for key, c in counts.items()},
+        sentence=wrong / n,
+        malformed=malformed / n,
+        unfaithful=unfaithful / n,
+        **{key: _errors(c) for key, c in counts.items()},
     )
+
+
+def _split(errors: Errors) -> str:
+    return f"  ({errors.missed:.2%} missed, {errors.spurious:.2%} spurious)"
 
 
 def _tally(gold: Iterable[Hashable], pred: Iterable[Hashable]) -> Counter:
@@ -82,11 +93,9 @@ def _tally(gold: Iterable[Hashable], pred: Iterable[Hashable]) -> Counter:
     return Counter(tp=matched, gold=sum(gold_counts.values()), pred=sum(pred_counts.values()))
 
 
-def _prf(counts: Counter) -> PRF:
-    precision = counts["tp"] / counts["pred"] if counts["pred"] else 0.0
-    recall = counts["tp"] / counts["gold"] if counts["gold"] else 0.0
-    denom = precision + recall
-    return PRF(precision, recall, 2 * precision * recall / denom if denom else 0.0)
+def _errors(counts: Counter) -> Errors:
+    gold = counts["gold"] or 1
+    return Errors((counts["gold"] - counts["tp"]) / gold, (counts["pred"] - counts["tp"]) / gold)
 
 
 def _intents(a: Annotation) -> list:
