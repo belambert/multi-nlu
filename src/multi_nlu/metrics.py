@@ -34,6 +34,7 @@ class Scores:
     """Error rates over a set of predictions."""
 
     n: int
+    total: Errors
     intent: Errors
     slot: Errors
     sentence: float
@@ -45,6 +46,7 @@ class Scores:
 
     def summary(self) -> str:
         rows = [
+            ("total errors", self.total.rate, _split(self.total)),
             ("intent errors", self.intent.rate, _split(self.intent)),
             ("slot errors", self.slot.rate, _split(self.slot)),
             ("sentence errors", self.sentence, ""),
@@ -106,6 +108,11 @@ def _slots(a: Annotation) -> list:
     return [(s.label, value(s.text(a.text))) for i in a.intents for s in i.slots]
 
 
+def _total(a: Annotation) -> list:
+    # intent labels are strings and slots tuples, so the two never match each other
+    return _intents(a) + _slots(a)
+
+
 def structure(a: Annotation) -> list:
     """The annotation as ordered content, ignoring the text between spans."""
     if a.malformed:
@@ -114,6 +121,7 @@ def structure(a: Annotation) -> list:
 
 
 _EXTRACTORS = {
+    "total": _total,
     "intent": _intents,
     "slot": _slots,
 }

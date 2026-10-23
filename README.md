@@ -128,6 +128,7 @@ better.
 
 | Metric          | Counts an error when                                          |
 | --------------- | ------------------------------------------------------------- |
+| total errors    | any intent or slot error, pooled over both                    |
 | intent errors   | a gold intent is missed, or a predicted one is spurious       |
 | slot errors     | a gold slot (label and text) is missed, or one is spurious    |
 | sentence errors | any intent or slot in the utterance is wrong                  |
@@ -138,6 +139,12 @@ Intent and slot errors are divided by the number of gold items and broken down
 into false negatives (FN, missed) and false positives (FP, spurious), which
 `--detail` marks `-` and `+`. A wrong label counts as one of each, so a model
 that invents many slots can exceed 100%.
+
+Total errors divides the intent and slot errors together by the gold intents
+and slots together, so it is the one number to rank models by. Slots outnumber
+intents, so it mostly tracks slot errors, and a missed intent costs its slots
+too. It resembles the semantic error rate, but that aligns predictions to gold
+and counts a wrong label once, as a substitution, where this counts it twice.
 
 `malformed` and `unfaithful` measure whether the model respected the format at
 all; they are usually the first thing fine-tuning fixes. Formats that emit
