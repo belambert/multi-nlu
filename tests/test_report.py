@@ -1,8 +1,20 @@
 import typer
 from click import unstyle
+from typer.testing import CliRunner
 
+from multi_nlu.cli import app
 from multi_nlu.formats import get_format
-from multi_nlu.report import HANG, Status, diff, render_all, summarize
+from multi_nlu.report import (
+    HANG,
+    Prediction,
+    Status,
+    diff,
+    load,
+    meta_path,
+    render_all,
+    save,
+    summarize,
+)
 
 LABELS = {"", "got", "want", "copied", "intents", "slots", "~ partial", "! malformed"}
 
@@ -171,3 +183,30 @@ def test_each_status_gets_its_own_colour_without_changing_the_layout():
 
 def test_colour_is_stripped_from_the_badge_when_unstyled():
     assert unstyle(run(GOLD).render().splitlines()[0]).startswith("✓ correct   book")
+
+
+def test_saved_predictions_load_back_with_their_sidecar(tmp_path):
+    path = tmp_path / "preds.jsonl"
+    preds = [Prediction(TEXT, GOLD, gold=GOLD, format="xml")]
+    save(path, preds, {"device": "mps", "n": 1, "secs": 0.25})
+
+    assert meta_path(path) == tmp_path / "preds.meta.json"
+    assert load(path) == (preds, {"device": "mps", "n": 1, "secs": 0.25})
+
+
+def test_predictions_without_a_sidecar_load_with_no_meta(tmp_path):
+    path = tmp_path / "preds.jsonl"
+    save(path, [Prediction(TEXT, GOLD, gold=GOLD)], {})
+    meta_path(path).unlink()
+
+    assert load(path)[1] is None
+
+
+def test_score_reports_the_saved_timing(tmp_path):
+    path = tmp_path / "preds.jsonl"
+    save(path, [Prediction(TEXT, GOLD, gold=GOLD)] * 4, {"n": 4, "secs": 1.0})
+
+    result = CliRunner().invoke(app, ["score", str(path)])
+
+    assert result.exit_code == 0
+    assert "time / utterance   250.0 ms" in result.output
