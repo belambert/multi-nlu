@@ -54,8 +54,9 @@ def predict(
     seed: int = 0,
 ) -> None:
     """Annotate a split with a base or fine-tuned model, then score the result."""
-    from multi_nlu.models import load_model, timed
-    from multi_nlu.predict import predict as run
+    from multi_nlu.device import timed
+    from multi_nlu.generative.models import load_model
+    from multi_nlu.generative.predict import predict as run
 
     task, fmt = load_schema(schema), get_format(format)
     examples = load_examples(task, split, limit, seed)
@@ -119,8 +120,8 @@ def train(
     seed: int = 0,
 ) -> None:
     """Fine-tune a LoRA adapter on the train split."""
-    from multi_nlu.train import TrainConfig
-    from multi_nlu.train import train as run
+    from multi_nlu.generative.train import TrainConfig
+    from multi_nlu.generative.train import train as run
 
     task = load_schema(schema)
     config = TrainConfig(

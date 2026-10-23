@@ -11,8 +11,8 @@ from transformers import PreTrainedTokenizerBase, Trainer, TrainingArguments
 
 from multi_nlu.data import Example
 from multi_nlu.formats import Format
-from multi_nlu.models import load_model
-from multi_nlu.prompts import build_messages
+from multi_nlu.generative.models import load_model
+from multi_nlu.generative.prompts import build_messages
 from multi_nlu.schema import Schema
 
 IGNORE = -100
