@@ -3,7 +3,7 @@ import pytest
 from multi_nlu.annotation import Annotation, IntentSpan, Span
 from multi_nlu.data import Example, sample_shots
 from multi_nlu.formats import DEFAULT, format_names, get_format
-from multi_nlu.prompts import build_messages
+from multi_nlu.generative.prompts import build_messages
 from multi_nlu.schema import builtin_schemas, derive_schema, load_schema
 
 xml = get_format("xml")

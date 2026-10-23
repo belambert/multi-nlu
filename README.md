@@ -246,13 +246,15 @@ annotations — and pass it to any command:
             xml.py      inline XML tagging
             dict_format.py  structured-JSON tagging
         data.py         loading examples, sampling few-shot demonstrations
-        prompts.py      the message layout shared by prompting and fine-tuning
-        models.py       model loading, device and dtype selection, timing
-        predict.py      batched generation
+        device.py       device and dtype selection, timing
         metrics.py      scoring, on annotations rather than text
         report.py       saved predictions, their scores and per-example diffs
-        train.py        LoRA fine-tuning
         cli.py          command line interface
+        generative/     prompting and LoRA fine-tuning decoder LMs
+            models.py   causal LM and tokenizer loading
+            prompts.py  the message layout shared by prompting and fine-tuning
+            predict.py  batched generation
+            train.py    LoRA fine-tuning
 
 ## Development
 

@@ -8,7 +8,7 @@ from transformers import PreTrainedTokenizerBase
 
 from multi_nlu.data import Example
 from multi_nlu.formats import Format
-from multi_nlu.prompts import build_messages
+from multi_nlu.generative.prompts import build_messages
 from multi_nlu.report import Prediction
 from multi_nlu.schema import Schema
 
