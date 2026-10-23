@@ -113,7 +113,17 @@ and saving its predictions under `runs/few-shot/` for re-scoring with `score`:
 
     ./scripts/compare-formats.sh
 
-Edit the models or args in the script directly to compare something else.
+`scripts/compare-finetuned.sh` does the same for LoRA fine-tunes, training an
+adapter per model and format under `runs/` and then evaluating it:
+
+    ./scripts/compare-finetuned.sh
+
+Both take model ids to run only those, e.g.
+`./scripts/compare-finetuned.sh Qwen/Qwen3.5-0.8B`. Both are safe to rerun: runs
+with saved predictions are skipped and finished adapters are reused, so delete
+a run's files to redo it. A failed run is listed at the end rather than stopping
+the others. Training logs to wandb, so run `wandb login` first or set
+`WANDB_MODE=offline` on a machine that isn't logged in.
 
 The device is chosen automatically — cuda, then mps, then cpu — and `--device`
 overrides it. Training uses bf16 on cuda and fp32 elsewhere.
