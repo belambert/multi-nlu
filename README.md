@@ -173,9 +173,29 @@ All results are on the full test split (n = 2199).
 
 ### Few-Shot
 
-Few-shot prompting (8 shots), from `scripts/compare-few-shot.sh`. Slot F1 is by
-value. This table predates the switch to error rates and still reports the
-earlier F1 and accuracy scores; it will be replaced once the runs are re-scored.
+Few-shot prompting (8 shots), from `scripts/compare-few-shot.sh`. Every score is
+an error rate (see [Metrics](#metrics)), timed as for the fine-tuned runs below.
+The re-run with error rates has so far reached 4B; larger models follow.
+
+| Model        | Format | Total      | Intent     | Slot    | Sentence   | Malformed | Unfaithful | ms / utt |
+| ------------ | ------ | ---------- | ---------- | ------- | ---------- | --------- | ---------- | -------- |
+| Qwen3.5-0.8B | `xml`  |     95.97% |     40.76% | 117.37% |     97.68% |    14.55% |     84.99% |      568 |
+| Qwen3.5-0.8B | `dict` |     88.01% |     35.79% | 108.26% |     97.91% |    12.14% |     12.14% |      358 |
+| Qwen3.5-2B   | `xml`  |     79.57% |     22.28% | 101.78% |     95.09% |     2.82% |     74.49% |      749 |
+| Qwen3.5-2B   | `dict` |     77.73% |     30.80% |  95.93% |     96.45% |     0.32% |      0.32% |      457 |
+| Qwen3.5-4B   | `xml`  |     54.29% |     22.26% |  66.72% | **84.81%** |     1.59% |     31.56% |     1771 |
+| Qwen3.5-4B   | `dict` | **50.68%** | **13.58%** |  65.06% |     90.90% |     0.00% |      0.00% |     1058 |
+
+Few-shot errors stay far above fine-tuned ones: slot errors exceed 100% below
+4B, since the models both miss most gold slots and invent spurious ones. Size
+helps most between 2B and 4B (about 25 points of total errors). `dict` has
+fewer total errors at every size so far (2-8 points) and runs 40% faster, but
+`xml` gets more utterances fully right at 4B (84.81% sentence errors against
+90.90%). `xml` paraphrases the utterance often (32-85%), while `dict` is
+unfaithful only when malformed.
+
+The earlier run, scored before the switch to error rates, covers the larger
+models too. Slot F1 is by value.
 
 | Model           | Format | Intent F1 | Slot F1 | Exact match | Well formed | Faithful |
 | --------------- | ------ | --------- | ------- | ----------- | ----------- | -------- |
