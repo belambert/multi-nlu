@@ -66,7 +66,7 @@ def test_malformed_prediction_scores_zero():
 
 
 def test_prediction_reads_itself_back_through_its_format():
-    from multi_nlu.predict import Prediction
+    from multi_nlu.report import Prediction
 
     pred = Prediction(TEXT, GOLD, gold=GOLD, format="xml")
 

@@ -11,7 +11,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from typing import Hashable, Iterable, Sequence
 
-from multi_nlu.annotation import Annotation, is_faithful
+from multi_nlu.annotation import Annotation, is_faithful, value
 
 
 @dataclass(frozen=True)
@@ -91,11 +91,6 @@ def _prf(counts: Counter) -> PRF:
     recall = counts["tp"] / counts["gold"] if counts["gold"] else 0.0
     denom = precision + recall
     return PRF(precision, recall, 2 * precision * recall / denom if denom else 0.0)
-
-
-def value(text: str) -> str:
-    """A slot's text as it is compared: whitespace collapsed, lowercased."""
-    return " ".join(text.split()).lower()
 
 
 def _intents(a: Annotation) -> list:

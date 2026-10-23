@@ -1,22 +1,15 @@
 """Command line interface."""
 
 import json
-import time
-from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import Annotated, Optional
 
 import typer
 
-from multi_nlu import metrics, report
 from multi_nlu.data import load_examples, sample_shots
 from multi_nlu.formats import DEFAULT, format_names, get_format
-from multi_nlu.predict import Prediction
-from multi_nlu.report import Detail
+from multi_nlu.report import Detail, Prediction, evaluate
 from multi_nlu.schema import DatasetSpec, builtin_schemas, derive_schema, load_schema
-
-if TYPE_CHECKING:
-    import torch
 
 app = typer.Typer(help="Multi-intent NLU with generative language models.", no_args_is_help=True)
 
@@ -60,7 +53,7 @@ def predict(
     seed: int = 0,
 ) -> None:
     """Annotate a split with a base or fine-tuned model, then score the result."""
-    from multi_nlu.models import load_model
+    from multi_nlu.models import load_model, timed
     from multi_nlu.predict import predict as run
 
     task, fmt = load_schema(schema), get_format(format)
@@ -70,7 +63,7 @@ def predict(
     model_, tokenizer, dev = load_model(
         model, adapter=str(adapter) if adapter else None, device=device
     )
-    generations, secs = _timed(
+    generations, secs = timed(
         dev,
         lambda: run([e.text for e in examples], model_, tokenizer, task, fmt, demos, batch_size),
     )
@@ -84,7 +77,7 @@ def predict(
         out.write_text("\n".join(json.dumps(vars(p)) for p in preds) + "\n")
         typer.echo(f"wrote {len(preds)} predictions to {out}")
 
-    typer.echo(_report(preds, detail) + "\n" + _per_utterance(secs, len(examples)))
+    typer.echo(evaluate(preds, detail) + "\n" + _per_utterance(secs, len(examples)))
 
 
 @app.command()
@@ -94,7 +87,7 @@ def score(
 ) -> None:
     """Re-score a saved predictions file."""
     rows = [json.loads(line) for line in predictions.read_text().splitlines() if line]
-    typer.echo(_report([Prediction(**row) for row in rows], detail))
+    typer.echo(evaluate([Prediction(**row) for row in rows], detail))
 
 
 @app.command()
@@ -218,42 +211,6 @@ def show(
             slots = ", ".join(f"{s.label}={s.text(annotation.text)!r}" for s in intent.slots)
             typer.echo(f"  {intent.label}: {slots}")
         typer.echo("")
-
-
-def _report(preds: list[Prediction], detail: Detail = Detail.NONE) -> str:
-    """The scores, optionally preceded by a diff of each example."""
-    graded = [p for p in preds if p.gold is not None]
-    if not graded:
-        return "no gold annotations to score against"
-
-    golds = [p.gold_annotation for p in graded]
-    predicted = [p.annotation for p in graded]
-    scores = metrics.score(golds, predicted, [p.text for p in graded])
-    if detail is Detail.NONE:
-        return scores.summary()
-
-    diffs = [report.diff(g, a, p.text, p.output) for g, a, p in zip(golds, predicted, graded)]
-    shown = [d for d in diffs if detail is Detail.ALL or d.status is not report.Status.CORRECT]
-    return report.render_all(shown) + "\n".join([report.summarize(diffs), scores.summary()])
-
-
-def _timed[T](dev: "torch.device", fn: Callable[[], T]) -> tuple[T, float]:
-    """Call fn, returning its result and the wall-clock seconds it took on dev."""
-    _sync(dev)
-    start = time.perf_counter()
-    result = fn()
-    _sync(dev)
-    return result, time.perf_counter() - start
-
-
-def _sync(dev: "torch.device") -> None:
-    # gpu kernels run asynchronously, so wait for them before reading the clock
-    import torch
-
-    if dev.type == "cuda":
-        torch.cuda.synchronize(dev)
-    elif dev.type == "mps":
-        torch.mps.synchronize()
 
 
 def _per_utterance(secs: float, n: int) -> str:

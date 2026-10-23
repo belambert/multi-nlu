@@ -48,5 +48,10 @@ def is_faithful(annotation: Annotation, utterance: str) -> bool:
     return not annotation.malformed and _norm(annotation.text) == _norm(utterance)
 
 
+def value(text: str) -> str:
+    """A slot's text as it is compared: whitespace collapsed, lowercased."""
+    return _norm(text).lower()
+
+
 def _norm(text: str) -> str:
     return " ".join(text.split())
