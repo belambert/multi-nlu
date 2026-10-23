@@ -231,7 +231,7 @@ annotations — and pass it to any command:
 
 ## TODO
 
-- [ ] Compare both formats
+- [ ] Re-run the experiments to get error-rate figures for the results tables
 - [ ] Do the modeling with an encoder model
 - [x] add wandb/trackio
 - [ ] Evaluation? Does order matter?
