@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compare xml/dict on each instruct Qwen3.5 model under 40B, same split and sample.
+# Few-shot prompt each instruct Qwen3.5 model under 40B in xml and dict, same sample.
 # Pass model ids to run only those. A run whose predictions exist is skipped, so a
 # rerun resumes; failures are listed at the end instead of stopping the rest.
 set -uo pipefail
