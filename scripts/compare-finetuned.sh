@@ -22,7 +22,8 @@ for model in "${models[@]}"; do
         echo "== $model $format: train =="
         uv run multi-nlu train -m "$model" --format "$format" -o "$run" --wandb-project multi-nlu-finetune
         echo "== $model $format: eval =="
-        uv run multi-nlu predict -m "$model" --format "$format" --adapter "$run" --split test
+        uv run multi-nlu predict -m "$model" --format "$format" --adapter "$run" --split test \
+            --out "$run/preds.jsonl"
         echo
     done
 done

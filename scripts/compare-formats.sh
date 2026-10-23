@@ -18,7 +18,9 @@ models=(
 for model in "${models[@]}"; do
     for format in xml dict; do
         echo "== $model $format =="
-        uv run multi-nlu predict -m "$model" --format "$format" --shots 8 --split test
+        name="$(basename "$model" | tr '[:upper:]' '[:lower:]')-$format"
+        uv run multi-nlu predict -m "$model" --format "$format" --shots 8 --split test \
+            --out "runs/few-shot/$name.jsonl"
         echo
     done
 done

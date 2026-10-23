@@ -1,5 +1,5 @@
 from multi_nlu.formats import get_format
-from multi_nlu.metrics import score
+from multi_nlu.metrics import Errors, score
 
 xml = get_format("xml")
 
@@ -17,23 +17,23 @@ def run(pred, gold=GOLD, text=TEXT):
 def test_perfect_prediction():
     s = run(GOLD)
 
-    assert s.intent.f1 == s.slot.f1 == 1.0
-    assert s.exact_match == s.well_formed == s.faithful == 1.0
+    assert s.intent.rate == s.slot.rate == 0.0
+    assert s.sentence == s.malformed == s.unfaithful == 0.0
 
 
-def test_missing_intent_costs_recall_only():
+def test_missing_intent_is_a_false_negative():
     s = run("<BookRestaurant>book a table in <city>ames</city></BookRestaurant> and play jazz")
 
-    assert s.intent.precision == 1.0
-    assert s.intent.recall == 0.5
-    assert s.exact_match == 0.0
+    assert s.intent == Errors(fn=0.5, fp=0.0)
+    assert s.sentence == 1.0
 
 
-def test_wrong_slot_label_scores_zero_for_that_slot():
+def test_wrong_slot_label_is_one_fn_and_one_fp():
     s = run(GOLD.replace("genre", "music_item"))
 
-    assert s.slot.f1 == 0.5
-    assert s.intent.f1 == 1.0
+    assert s.slot == Errors(fn=0.5, fp=0.5)
+    assert s.slot.rate == 1.0
+    assert s.intent.rate == 0.0
 
 
 def test_slot_under_wrong_intent_only_breaks_exact_match():
@@ -43,8 +43,8 @@ def test_slot_under_wrong_intent_only_breaks_exact_match():
     )
     s = run(swapped)
 
-    assert s.slot.f1 == 1.0
-    assert s.exact_match == 0.0
+    assert s.slot.rate == 0.0
+    assert s.sentence == 1.0
 
 
 def test_drifted_text_keeps_value_match():
@@ -54,14 +54,26 @@ def test_drifted_text_keeps_value_match():
     )
     s = run(drifted)
 
-    assert s.faithful == 0.0
-    assert s.slot.f1 == 1.0
+    assert s.unfaithful == 1.0
+    assert s.slot.rate == 0.0
 
 
-def test_malformed_prediction_scores_zero():
+def test_malformed_prediction_misses_everything():
     s = run("<BookRestaurant>book a table in <city>ames</city>")
 
-    assert s.well_formed == s.intent.f1 == s.slot.f1 == s.exact_match == 0.0
+    assert s.malformed == s.intent.fn == s.slot.fn == s.sentence == 1.0
+
+
+def test_hallucinated_slots_can_push_the_rate_past_one():
+    extra = "<city>ames</city> <city>x</city> <city>y</city> <city>z</city>"
+    s = run(GOLD.replace("<city>ames</city>", extra))
+
+    assert s.slot == Errors(fn=0.0, fp=1.5)
+    assert s.slot.rate == 1.5
+
+
+def test_summary_breaks_errors_down():
+    assert "(50.00% FN, 50.00% FP)" in run(GOLD.replace("genre", "x")).summary()
 
 
 def test_prediction_reads_itself_back_through_its_format():
@@ -70,4 +82,4 @@ def test_prediction_reads_itself_back_through_its_format():
     pred = Prediction(TEXT, GOLD, gold=GOLD, format="xml")
 
     assert pred.annotation == pred.gold_annotation
-    assert score([pred.gold_annotation], [pred.annotation], [TEXT]).exact_match == 1.0
+    assert score([pred.gold_annotation], [pred.annotation], [TEXT]).sentence == 0.0

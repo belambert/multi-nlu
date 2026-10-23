@@ -108,7 +108,8 @@ new schema. Every command takes `--help`.
 ### Comparing formats
 
 `scripts/compare-formats.sh` runs `predict` on the same sample once per format
-for each instruct Qwen3.5 model under 40B, printing each one's scores in turn:
+for each instruct Qwen3.5 model under 40B, printing each one's scores in turn
+and saving its predictions under `runs/few-shot/` for re-scoring with `score`:
 
     ./scripts/compare-formats.sh
 
@@ -121,18 +122,24 @@ overrides it. Training uses bf16 on cuda and fp32 elsewhere.
 
 Scoring happens on parsed annotations, never on raw text, so every format is
 graded identically. Generated text can drift from the input utterance, which
-shifts every character offset after the drift, so slot F1 compares span
-*values* rather than positions.
+shifts every character offset after the drift, so slot errors compare span
+*values* rather than positions. Every score is an error rate, so lower is
+better.
 
-| Metric      | Counts a match when                                   |
-| ----------- | ----------------------------------------------------- |
-| intent F1   | the intent label appears as often as in gold          |
-| slot F1     | a slot label and its text match                       |
-| exact match | every intent and slot in the utterance is right       |
-| well formed | the output parses in its format                       |
-| faithful    | the output reproduces the utterance, whitespace aside |
+| Metric          | Counts an error when                                          |
+| --------------- | ------------------------------------------------------------- |
+| intent errors   | a gold intent is missed, or a predicted one is spurious       |
+| slot errors     | a gold slot (label and text) is missed, or one is spurious    |
+| sentence errors | any intent or slot in the utterance is wrong                  |
+| malformed       | the output does not parse in its format                       |
+| unfaithful      | the output does not reproduce the utterance, whitespace aside |
 
-`well formed` and `faithful` measure whether the model respected the format at
+Intent and slot errors are divided by the number of gold items and broken down
+into false negatives (FN, missed) and false positives (FP, spurious), which
+`--detail` marks `-` and `+`. A wrong label counts as one of each, so a model
+that invents many slots can exceed 100%.
+
+`malformed` and `unfaithful` measure whether the model respected the format at
 all; they are usually the first thing fine-tuning fixes. Formats that emit
 offsets rather than a copy of the utterance are faithful by construction, which
 is part of what the comparison is meant to expose.
@@ -141,6 +148,9 @@ is part of what the comparison is meant to expose.
 
 Few-shot prompting (8 shots) on the full test split (n = 2199), from
 `scripts/compare-formats.sh`. Slot F1 is by value.
+
+These tables predate the switch to error rates and still report the earlier F1
+and accuracy scores; they will be replaced once the runs are re-scored.
 
 ### Few-Shot
 
