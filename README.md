@@ -233,7 +233,7 @@ annotations — and pass it to any command:
 
 - [ ] Re-run the experiments to get error-rate figures for the results tables
 - [ ] Do the modeling with an encoder model
-- [ ] Evaluation? Does order matter?
+- [ ] Switch to alignment-based evaluation using an external library
 - [ ] Fix the 2 train rows whose slot span overruns its intent span (dataset repo)
 
 ## Layout
