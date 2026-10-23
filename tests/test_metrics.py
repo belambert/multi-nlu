@@ -21,17 +21,17 @@ def test_perfect_prediction():
     assert s.sentence == s.malformed == s.unfaithful == 0.0
 
 
-def test_missing_intent_is_missed_not_spurious():
+def test_missing_intent_is_a_false_negative():
     s = run("<BookRestaurant>book a table in <city>ames</city></BookRestaurant> and play jazz")
 
-    assert s.intent == Errors(missed=0.5, spurious=0.0)
+    assert s.intent == Errors(fn=0.5, fp=0.0)
     assert s.sentence == 1.0
 
 
-def test_wrong_slot_label_is_one_miss_and_one_spurious():
+def test_wrong_slot_label_is_one_fn_and_one_fp():
     s = run(GOLD.replace("genre", "music_item"))
 
-    assert s.slot == Errors(missed=0.5, spurious=0.5)
+    assert s.slot == Errors(fn=0.5, fp=0.5)
     assert s.slot.rate == 1.0
     assert s.intent.rate == 0.0
 
@@ -61,19 +61,19 @@ def test_drifted_text_keeps_value_match():
 def test_malformed_prediction_misses_everything():
     s = run("<BookRestaurant>book a table in <city>ames</city>")
 
-    assert s.malformed == s.intent.missed == s.slot.missed == s.sentence == 1.0
+    assert s.malformed == s.intent.fn == s.slot.fn == s.sentence == 1.0
 
 
 def test_hallucinated_slots_can_push_the_rate_past_one():
     extra = "<city>ames</city> <city>x</city> <city>y</city> <city>z</city>"
     s = run(GOLD.replace("<city>ames</city>", extra))
 
-    assert s.slot == Errors(missed=0.0, spurious=1.5)
+    assert s.slot == Errors(fn=0.0, fp=1.5)
     assert s.slot.rate == 1.5
 
 
 def test_summary_breaks_errors_down():
-    assert "(50.00% missed, 50.00% spurious)" in run(GOLD.replace("genre", "x")).summary()
+    assert "(50.00% FN, 50.00% FP)" in run(GOLD.replace("genre", "x")).summary()
 
 
 def test_prediction_reads_itself_back_through_its_format():

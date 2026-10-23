@@ -18,15 +18,15 @@ LABEL = 16  # width of the summary's names, wide enough for the cli's timing lin
 
 @dataclass(frozen=True)
 class Errors:
-    """Missed and spurious items, each as a fraction of the gold count."""
+    """False negatives (missed) and positives (spurious), as fractions of the gold count."""
 
-    missed: float
-    spurious: float
+    fn: float
+    fp: float
 
     @property
     def rate(self) -> float:
-        # a wrong label is one miss plus one spurious item, so this can pass 100%
-        return self.missed + self.spurious
+        # a wrong label is one fn plus one fp, so this can pass 100%
+        return self.fn + self.fp
 
 
 @dataclass(frozen=True)
@@ -83,7 +83,7 @@ def score(
 
 
 def _split(errors: Errors) -> str:
-    return f"  ({errors.missed:.2%} missed, {errors.spurious:.2%} spurious)"
+    return f"  ({errors.fn:.2%} FN, {errors.fp:.2%} FP)"
 
 
 def _tally(gold: Iterable[Hashable], pred: Iterable[Hashable]) -> Counter:

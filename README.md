@@ -135,8 +135,9 @@ better.
 | unfaithful      | the output does not reproduce the utterance, whitespace aside |
 
 Intent and slot errors are divided by the number of gold items and broken down
-into missed and spurious, matching the `-` and `+` marks of `--detail`. A wrong
-label counts as one of each, so a model that invents many slots can exceed 100%.
+into false negatives (FN, missed) and false positives (FP, spurious), which
+`--detail` marks `-` and `+`. A wrong label counts as one of each, so a model
+that invents many slots can exceed 100%.
 
 `malformed` and `unfaithful` measure whether the model respected the format at
 all; they are usually the first thing fine-tuning fixes. Formats that emit
