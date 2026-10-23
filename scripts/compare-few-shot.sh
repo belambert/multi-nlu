@@ -5,7 +5,9 @@
 set -uo pipefail
 
 # keep nohup logs small: redraw bars once a minute, in ascii, and hide HF download bars
-export TQDM_MININTERVAL="${TQDM_MININTERVAL:-60}" TQDM_ASCII="${TQDM_ASCII:-1}"
+export TQDM_MININTERVAL="${TQDM_MININTERVAL:-60}"
+# tqdm reads this as the bar's characters, so "1" or "True" break or garble the bar
+export TQDM_ASCII="${TQDM_ASCII:- 123456789#}"
 export HF_HUB_DISABLE_PROGRESS_BARS="${HF_HUB_DISABLE_PROGRESS_BARS:-1}"
 
 models=(
