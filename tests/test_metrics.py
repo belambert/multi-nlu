@@ -17,8 +17,15 @@ def run(pred, gold=GOLD, text=TEXT):
 def test_perfect_prediction():
     s = run(GOLD)
 
-    assert s.intent.rate == s.slot.rate == 0.0
+    assert s.total.rate == s.intent.rate == s.slot.rate == 0.0
     assert s.sentence == s.malformed == s.unfaithful == 0.0
+
+
+def test_total_pools_intents_and_slots():
+    # a missed intent also loses its slot: 2 of the 4 gold items
+    s = run("<BookRestaurant>book a table in <city>ames</city></BookRestaurant> and play jazz")
+
+    assert s.total == Errors(fn=0.5, fp=0.0)
 
 
 def test_missing_intent_is_a_false_negative():
