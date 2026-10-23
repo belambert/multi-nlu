@@ -107,11 +107,11 @@ new schema. Every command takes `--help`.
 
 ### Comparing formats
 
-`scripts/compare-formats.sh` runs `predict` on the same sample once per format
-for each instruct Qwen3.5 model under 40B, printing each one's scores in turn
+`scripts/compare-few-shot.sh` prompts each instruct Qwen3.5 model under 40B with
+8 shots, once per format on the same sample, printing each one's scores in turn
 and saving its predictions under `runs/few-shot/` for re-scoring with `score`:
 
-    ./scripts/compare-formats.sh
+    ./scripts/compare-few-shot.sh
 
 `scripts/compare-finetuned.sh` does the same for LoRA fine-tunes, training an
 adapter per model and format under `runs/` and then evaluating it:
@@ -164,7 +164,7 @@ is part of what the comparison is meant to expose.
 ## Results
 
 Few-shot prompting (8 shots) on the full test split (n = 2199), from
-`scripts/compare-formats.sh`. Slot F1 is by value.
+`scripts/compare-few-shot.sh`. Slot F1 is by value.
 
 These tables predate the switch to error rates and still report the earlier F1
 and accuracy scores; they will be replaced once the runs are re-scored.
