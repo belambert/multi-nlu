@@ -169,13 +169,13 @@ is part of what the comparison is meant to expose.
 
 ## Results
 
-Few-shot prompting (8 shots) on the full test split (n = 2199), from
-`scripts/compare-few-shot.sh`. Slot F1 is by value.
-
-These tables predate the switch to error rates and still report the earlier F1
-and accuracy scores; they will be replaced once the runs are re-scored.
+All results are on the full test split (n = 2199).
 
 ### Few-Shot
+
+Few-shot prompting (8 shots), from `scripts/compare-few-shot.sh`. Slot F1 is by
+value. This table predates the switch to error rates and still reports the
+earlier F1 and accuracy scores; it will be replaced once the runs are re-scored.
 
 | Model           | Format | Intent F1 | Slot F1 | Exact match | Well formed | Faithful |
 | --------------- | ------ | --------- | ------- | ----------- | ----------- | -------- |
@@ -201,29 +201,35 @@ right (88-100%). Scale helps slots
 
 ### Fine-Tuned (LoRA)
 
-| Model          | Format   | Intent F1 | Slot F1 | Exact match | Well formed | Faithful |
-| -------------- | -------- | --------- | ------- | ----------- | ----------- | -------- |
-| Qwen3.5-0.8B   | `xml`    |    98.17% |  95.35% |      79.90% |     100.00% |   99.32% |
-| Qwen3.5-0.8B   | `dict`   |    98.28% |  95.58% |      79.40% |     100.00% |  100.00% |
-| Qwen3.5-2B     | `xml`    |    98.79% |  95.57% |      79.99% |     100.00% |   99.32% |
-| Qwen3.5-2B     | `dict`   |    98.63% |  95.78% |      80.99% |     100.00% |  100.00% |
-| Qwen3.5-4B     | `xml`    |    98.56% |  96.55% |      84.36% |     100.00% |  100.00% |
-| Qwen3.5-4B     | `dict`   |    98.29% |  96.50% |      83.81% |     100.00% |  100.00% |
-| Qwen3.5-9B     | `xml`    |    98.56% |  96.99% |      86.40% |     100.00% |   99.73% |
-| Qwen3.5-9B     | `dict`   |    98.72% |  96.75% |      84.95% |     100.00% |  100.00% |
-| _other models_ |          |           |         |             |             |          |
+One epoch of LoRA per model and format, from `scripts/compare-finetuned.sh`.
+Every score is an error rate (see [Metrics](#metrics)); no run produced
+malformed output. Time per utterance is batched generation (batch size 8) on a
+DGX Spark.
 
-One epoch of LoRA on the 0.8B model beats few-shot 27B by about 15 points of
-slot F1 and lifts exact match from 27-33% to about 80%. It also closes the
-format gap: `xml` and `dict` land within 0.5 points on intent and slot F1 at
-every size, and both are fully well formed. Exact match differs more (up to 1.5
-points, favoring `xml` at 4B and 9B).
+| Model        | Format | Total     | Intent | Slot  | Sentence | Unfaithful | ms / utt |
+| ------------ | ------ | --------- | ------ | ----- | -------- | ---------- | -------- |
+| Qwen3.5-0.8B | `xml`  |     7.74% |  3.66% | 9.32% |   20.10% |      0.68% |      388 |
+| Qwen3.5-0.8B | `dict` |     7.32% |  3.44% | 8.83% |   20.60% |      0.00% |      240 |
+| Qwen3.5-2B   | `xml`  |     7.08% |  2.43% | 8.88% |   20.01% |      0.68% |      566 |
+| Qwen3.5-2B   | `dict` |     6.85% |  2.74% | 8.44% |   19.01% |      0.00% |      345 |
+| Qwen3.5-4B   | `xml`  |     5.77% |  2.88% | 6.90% |   15.64% |      0.00% |     1330 |
+| Qwen3.5-4B   | `dict` |     5.99% |  3.42% | 6.99% |   16.19% |      0.00% |      817 |
+| Qwen3.5-9B   | `xml`  | **5.14%** |  2.88% | 6.02% |   13.60% |      0.27% |     1914 |
+| Qwen3.5-9B   | `dict` |     5.40% |  2.56% | 6.50% |   15.05% |      0.00% |     1167 |
 
-Scale helps only modestly once the model is fine-tuned. Going from 0.8B to 2B
-adds about 0.2 points of slot F1 and up to 1.6 points of exact match; 2B to 4B
-adds 0.7-1.0 points of slot F1 and 2.8-4.4 points of exact match; 4B to 9B adds
-0.3-0.4 points of slot F1 and 1.1-2.0 points of exact match, reaching 86.4%
-exact match with `xml`.
+Fine-tuning closes most of the gap that few-shot prompting leaves: even the
+0.8B model gets four in five utterances fully right, against at most a third
+for few-shot 27B. Errors fall steadily with size, most between 2B and 4B (about
+1.1 points of total errors), reaching 5.14% with 9B `xml`.
+
+The two formats stay close at every size. `dict` is slightly more accurate at
+0.8B and 2B and `xml` at 4B and 9B, by 0.2-0.4 points of total errors. `dict` is
+35-40% faster, since it copies only slot text rather than the whole utterance,
+and it is always faithful, while `xml` paraphrases the utterance in up to 0.7%
+of examples.
+
+Fine-tuning Qwen3.5-27B runs out of memory on the DGX Spark's 128 GB of unified
+memory with the current settings, so it has no results yet.
 
 ## Schemas
 
@@ -254,7 +260,8 @@ annotations — and pass it to any command:
 
 ## TODO
 
-- [ ] Re-run the experiments to get error-rate figures for the results tables
+- [ ] Re-run the few-shot experiments to get error-rate figures
+- [ ] Fit 27B fine-tuning in memory (e.g. 4-bit loading or gradient checkpointing)
 - [ ] Do the modeling with an encoder model
 - [ ] Switch to alignment-based evaluation using an external library
 - [ ] Fix the 2 train rows whose slot span overruns its intent span (dataset repo)
