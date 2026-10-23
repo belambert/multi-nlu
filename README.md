@@ -48,12 +48,12 @@ this interface.
 
 Prompt a base model few-shot and score it:
 
-    uv run multi-nlu predict -m Qwen/Qwen3-1.7B --shots 8 --split test -n 200
+    uv run multi-nlu predict -m Qwen/Qwen3.5-2B --shots 8 --split test -n 200
 
 Fine-tune a LoRA adapter, then evaluate it:
 
-    uv run multi-nlu train -m Qwen/Qwen3-1.7B -o runs/qwen3-1.7b
-    uv run multi-nlu predict -m Qwen/Qwen3-1.7B --adapter runs/qwen3-1.7b --split test
+    uv run multi-nlu train -m Qwen/Qwen3.5-2B -o runs/qwen3.5-2b
+    uv run multi-nlu predict -m Qwen/Qwen3.5-2B --adapter runs/qwen3.5-2b --split test
 
 Both commands take `--format`, and training an adapter on a format evaluates
 through the same one:
@@ -217,7 +217,7 @@ To use a different dataset, write a schema for it — or derive one from its gol
 annotations — and pass it to any command:
 
     uv run multi-nlu derive-schema org/my-dataset -o my-dataset.yaml
-    uv run multi-nlu predict --schema my-dataset.yaml -m Qwen/Qwen3-1.7B
+    uv run multi-nlu predict --schema my-dataset.yaml -m Qwen/Qwen3.5-2B
 
 `derive-schema` drops slots seen in under 1% of an intent's occurrences
 (`--min-freq`), which filters annotation noise. Read the result before using it.
