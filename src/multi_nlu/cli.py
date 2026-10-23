@@ -42,7 +42,7 @@ DetailOpt = Annotated[
 
 @app.command()
 def predict(
-    model: ModelOpt = "Qwen/Qwen3-1.7B",
+    model: ModelOpt = "Qwen/Qwen3.5-2B",
     schema: SchemaOpt = "mixsnips",
     format: FormatOpt = DEFAULT,
     split: SplitOpt = "test",
@@ -99,7 +99,7 @@ def score(
 
 @app.command()
 def train(
-    model: ModelOpt = "Qwen/Qwen3-1.7B",
+    model: ModelOpt = "Qwen/Qwen3.5-2B",
     schema: SchemaOpt = "mixsnips",
     format: FormatOpt = DEFAULT,
     out: Annotated[Path, typer.Option("--out", "-o", help="Adapter output directory.")] = Path(

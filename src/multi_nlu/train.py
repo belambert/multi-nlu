@@ -20,7 +20,7 @@ IGNORE = -100
 
 @dataclass
 class TrainConfig:
-    model_id: str = "Qwen/Qwen3-1.7B"
+    model_id: str = "Qwen/Qwen3.5-2B"
     out_dir: Path = Path("runs/latest")
     epochs: float = 1.0
     batch_size: int = 4
