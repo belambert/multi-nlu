@@ -70,6 +70,12 @@ records the format that produced it, so `score` needs no flags:
     uv run multi-nlu predict ... -o preds.jsonl
     uv run multi-nlu score preds.jsonl
 
+`predict -o` also writes `preds.meta.json` beside the predictions: the model,
+adapter, format, sample, batch size, device and inference time. `score` reads it
+to report the time per utterance again. The time is the whole batched
+generation, excluding model loading, so it only compares across runs on the
+same device and batch size.
+
 Both `predict` and `score` take `--detail` (`-d`) to print the examples
 themselves — `errors` for the ones that went wrong, `all` for every one:
 

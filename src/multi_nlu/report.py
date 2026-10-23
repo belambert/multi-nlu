@@ -5,12 +5,14 @@ prediction got right, missed and invented, which is what you read when deciding
 what to change.
 """
 
+import json
 import shutil
 from collections import Counter
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from enum import StrEnum
-from typing import Hashable, Iterable, Sequence
+from pathlib import Path
+from typing import Any, Hashable, Iterable, Sequence
 
 import typer
 
@@ -38,6 +40,25 @@ class Prediction:
         if self.gold is None:
             raise ValueError("prediction carries no gold target")
         return get_format(self.format).parse(self.gold, self.text)
+
+
+def save(path: Path, preds: Sequence[Prediction], meta: dict[str, Any]) -> None:
+    """Write predictions as JSONL, and how they were made (e.g. timing) beside them."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # the sidecar goes first, so a predictions file never exists without one
+    meta_path(path).write_text(json.dumps(meta, indent=2) + "\n")
+    path.write_text("\n".join(json.dumps(vars(p)) for p in preds) + "\n")
+
+
+def load(path: Path) -> tuple[list[Prediction], dict[str, Any] | None]:
+    """Read saved predictions and their sidecar, if there is one."""
+    rows = [json.loads(line) for line in path.read_text().splitlines() if line]
+    meta = meta_path(path)
+    return [Prediction(**r) for r in rows], json.loads(meta.read_text()) if meta.is_file() else None
+
+
+def meta_path(path: Path) -> Path:
+    return path.with_suffix(".meta.json")
 
 
 class Status(StrEnum):

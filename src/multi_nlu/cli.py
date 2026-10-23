@@ -1,11 +1,11 @@
 """Command line interface."""
 
-import json
 from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
 
+from multi_nlu import report
 from multi_nlu.data import load_examples, sample_shots
 from multi_nlu.formats import DEFAULT, format_names, get_format
 from multi_nlu.metrics import LABEL
@@ -75,8 +75,21 @@ def predict(
     ]
 
     if out:
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text("\n".join(json.dumps(vars(p)) for p in preds) + "\n")
+        meta = dict(
+            model=model,
+            adapter=str(adapter) if adapter else None,
+            format=fmt.name,
+            schema=task.name,
+            split=split,
+            limit=limit,
+            shots=shots,
+            seed=seed,
+            batch_size=batch_size,
+            device=dev.type,
+            n=len(preds),
+            secs=secs,
+        )
+        report.save(out, preds, meta)
         typer.echo(f"wrote {len(preds)} predictions to {out}")
 
     typer.echo(evaluate(preds, detail) + "\n" + _per_utterance(secs, len(examples)))
@@ -87,9 +100,10 @@ def score(
     predictions: Annotated[Path, typer.Argument(help="JSONL written by `predict`.")],
     detail: DetailOpt = Detail.NONE,
 ) -> None:
-    """Re-score a saved predictions file."""
-    rows = [json.loads(line) for line in predictions.read_text().splitlines() if line]
-    typer.echo(evaluate([Prediction(**row) for row in rows], detail))
+    """Re-score a saved predictions file, with its timing when the sidecar has it."""
+    preds, meta = report.load(predictions)
+    timing = f"\n{_per_utterance(meta['secs'], meta['n'])}" if meta else ""
+    typer.echo(evaluate(preds, detail) + timing)
 
 
 @app.command()
