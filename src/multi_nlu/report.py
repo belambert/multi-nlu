@@ -195,8 +195,8 @@ def _intent_items(a: Annotation) -> list[tuple[Hashable, str]]:
 
 
 def _slot_items(a: Annotation) -> list[tuple[Hashable, str]]:
-    """Slots keyed as they are scored — scoped to their intent — and shown with
-    their original casing."""
+    """Slots keyed by value within their intent, as exact match judges them, and
+    shown with their original casing."""
     return [
         ((i.label, s.label, value(s.text(a.text))), f"{i.label}.{s.label}={s.text(a.text)!r}")
         for i in a.intents

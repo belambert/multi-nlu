@@ -17,7 +17,7 @@ def run(pred, gold=GOLD, text=TEXT):
 def test_perfect_prediction():
     s = run(GOLD)
 
-    assert s.intent.f1 == s.slot.f1 == s.slot_span.f1 == 1.0
+    assert s.intent.f1 == s.slot.f1 == 1.0
     assert s.exact_match == s.well_formed == s.faithful == 1.0
 
 
@@ -36,7 +36,7 @@ def test_wrong_slot_label_scores_zero_for_that_slot():
     assert s.intent.f1 == 1.0
 
 
-def test_slot_under_wrong_intent_only_hurts_scoped_score():
+def test_slot_under_wrong_intent_only_breaks_exact_match():
     swapped = (
         "<PlayMusic>book a table in <city>ames</city></PlayMusic>"
         " and <BookRestaurant>play <genre>jazz</genre></BookRestaurant>"
@@ -44,10 +44,10 @@ def test_slot_under_wrong_intent_only_hurts_scoped_score():
     s = run(swapped)
 
     assert s.slot.f1 == 1.0
-    assert s.slot_scoped.f1 == 0.0
+    assert s.exact_match == 0.0
 
 
-def test_drifted_text_keeps_value_match_but_loses_span_match():
+def test_drifted_text_keeps_value_match():
     drifted = (
         "<BookRestaurant>book a table in <city>ames</city></BookRestaurant>"
         " and please <PlayMusic>play <genre>jazz</genre></PlayMusic>"
@@ -56,7 +56,6 @@ def test_drifted_text_keeps_value_match_but_loses_span_match():
 
     assert s.faithful == 0.0
     assert s.slot.f1 == 1.0
-    assert s.slot_span.f1 == 0.5  # the genre span shifted by a word, the city did not
 
 
 def test_malformed_prediction_scores_zero():

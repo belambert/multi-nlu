@@ -121,18 +121,16 @@ overrides it. Training uses bf16 on cuda and fp32 elsewhere.
 
 Scoring happens on parsed annotations, never on raw text, so every format is
 graded identically. Generated text can drift from the input utterance, which
-shifts every character offset after the drift, so the headline slot scores
-compare span *values* rather than positions.
+shifts every character offset after the drift, so slot F1 compares span
+*values* rather than positions.
 
-| Metric                  | Counts a match when                                   |
-| ----------------------- | ----------------------------------------------------- |
-| intent F1               | the intent label appears as often as in gold          |
-| slot F1                 | a slot label and its text match                       |
-| slot F1 (intent-scoped) | that slot also sits under the right intent            |
-| slot F1 (exact spans)   | the slot covers the same characters — strict          |
-| exact match             | every intent and slot in the utterance is right       |
-| well formed             | the output parses in its format                       |
-| faithful                | the output reproduces the utterance, whitespace aside |
+| Metric      | Counts a match when                                   |
+| ----------- | ----------------------------------------------------- |
+| intent F1   | the intent label appears as often as in gold          |
+| slot F1     | a slot label and its text match                       |
+| exact match | every intent and slot in the utterance is right       |
+| well formed | the output parses in its format                       |
+| faithful    | the output reproduces the utterance, whitespace aside |
 
 `well formed` and `faithful` measure whether the model respected the format at
 all; they are usually the first thing fine-tuning fixes. Formats that emit

@@ -8,6 +8,7 @@ import typer
 
 from multi_nlu.data import load_examples, sample_shots
 from multi_nlu.formats import DEFAULT, format_names, get_format
+from multi_nlu.metrics import LABEL
 from multi_nlu.report import Detail, Prediction, evaluate
 from multi_nlu.schema import DatasetSpec, builtin_schemas, derive_schema, load_schema
 
@@ -215,8 +216,7 @@ def show(
 
 def _per_utterance(secs: float, n: int) -> str:
     """A summary line, aligned with the scores, for the mean inference time."""
-    # 23 is the widest name in Scores.summary
-    return f"{'time / utterance':<23}  {1000 * secs / max(n, 1):6.1f} ms"
+    return f"{'time / utterance':<{LABEL}}  {1000 * secs / max(n, 1):6.1f} ms"
 
 
 def main() -> None:

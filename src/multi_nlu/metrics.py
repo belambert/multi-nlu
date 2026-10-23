@@ -2,9 +2,8 @@
 
 Everything here works on Annotations, so numbers from different formats are
 directly comparable. Generative models can drift from the input utterance, which
-shifts every character offset after the drift, so the headline slot metrics
-compare span *values* as multisets; `slot_span` reports the stricter
-offset-based agreement, and is only meaningful on faithful predictions.
+shifts every character offset after the drift, so slot F1 compares span *values*
+as multisets rather than offsets.
 """
 
 from collections import Counter
@@ -12,6 +11,8 @@ from dataclasses import asdict, dataclass
 from typing import Hashable, Iterable, Sequence
 
 from multi_nlu.annotation import Annotation, is_faithful, value
+
+LABEL = 16  # width of the summary's names, wide enough for the cli's timing line
 
 
 @dataclass(frozen=True)
@@ -31,8 +32,6 @@ class Scores:
     exact_match: float
     intent: PRF
     slot: PRF
-    slot_scoped: PRF
-    slot_span: PRF
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -41,14 +40,11 @@ class Scores:
         rows = [
             ("intent F1", self.intent.f1),
             ("slot F1", self.slot.f1),
-            ("slot F1 (intent-scoped)", self.slot_scoped.f1),
-            ("slot F1 (exact spans)", self.slot_span.f1),
             ("exact match", self.exact_match),
             ("well formed", self.well_formed),
             ("faithful", self.faithful),
         ]
-        width = max(len(name) for name, _ in rows)
-        lines = [f"{name:<{width}}  {value:6.2%}" for name, value in rows]
+        lines = [f"{name:<{LABEL}}  {value:6.2%}" for name, value in rows]
         return "\n".join([f"n = {self.n}", *lines])
 
 
@@ -101,14 +97,6 @@ def _slots(a: Annotation) -> list:
     return [(s.label, value(s.text(a.text))) for i in a.intents for s in i.slots]
 
 
-def _slots_scoped(a: Annotation) -> list:
-    return [(i.label, s.label, value(s.text(a.text))) for i in a.intents for s in i.slots]
-
-
-def _slot_spans(a: Annotation) -> list:
-    return [(i.label, *s.key) for i in a.intents for s in i.slots]
-
-
 def structure(a: Annotation) -> list:
     """The annotation as ordered content, ignoring the text between spans."""
     if a.malformed:
@@ -119,6 +107,4 @@ def structure(a: Annotation) -> list:
 _EXTRACTORS = {
     "intent": _intents,
     "slot": _slots,
-    "slot_scoped": _slots_scoped,
-    "slot_span": _slot_spans,
 }
