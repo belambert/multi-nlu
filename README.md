@@ -142,46 +142,45 @@ is part of what the comparison is meant to expose.
 ## Results
 
 Few-shot prompting (8 shots) on the full test split (n = 2199), from
-`scripts/compare-formats.sh`. Slot F1 is by value, `scoped` is intent-scoped, and
-`exact` compares character spans.
+`scripts/compare-formats.sh`. Slot F1 is by value.
 
 ### Few-Shot
 
-| Model           | Format | Intent F1 | Slot F1 | Slot F1 scoped | Slot F1 exact | Exact match | Well formed | Faithful |
-| --------------- | ------ | --------- | ------- | -------------- | ------------- | ----------- | ----------- | -------- |
-| Qwen3.5-0.8B    | `xml`  |    77.49% |  34.04% |         31.56% |        13.53% |       2.32% |      85.45% |   15.01% |
-| Qwen3.5-0.8B    | `dict` |    80.61% |  35.78% |         32.99% |        32.92% |       2.09% |      87.86% |   87.86% |
-| Qwen3.5-2B      | `xml`  |    88.58% |  46.27% |         44.06% |        22.65% |       4.91% |      97.18% |   25.51% |
-| Qwen3.5-2B      | `dict` |    82.48% |  43.51% |         42.19% |        42.16% |       3.55% |      99.68% |   99.68% |
-| Qwen3.5-4B      | `xml`  |    88.88% |  65.14% |         63.78% |        51.07% |      15.19% |      98.41% |   68.44% |
-| Qwen3.5-4B      | `dict` |    93.19% |  65.43% |         64.42% |        64.39% |       9.10% |     100.00% |  100.00% |
-| Qwen3.5-9B      | `xml`  |    92.87% |  69.34% |         68.37% |        57.76% |      19.46% |      99.14% |   75.17% |
-| Qwen3.5-9B      | `dict` |    93.65% |  69.04% |         68.55% |        68.51% |      12.14% |     100.00% |  100.00% |
-| Qwen3.5-27B     | `xml`  |    95.68% |  80.48% |         80.11% |        76.40% |      33.42% |      99.91% |   91.72% |
-| Qwen3.5-27B     | `dict` |    95.90% |  80.40% |         80.11% |        80.07% |      26.65% |     100.00% |  100.00% |
-| Qwen3.5-35B-A3B | `xml`  |    90.29% |  74.83% |         73.95% |        67.65% |      25.42% |      95.45% |   82.86% |
-| Qwen3.5-35B-A3B | `dict` |    94.16% |  74.76% |         74.36% |        74.35% |      19.87% |      99.23% |   99.23% |
+| Model           | Format | Intent F1 | Slot F1 | Exact match | Well formed | Faithful |
+| --------------- | ------ | --------- | ------- | ----------- | ----------- | -------- |
+| Qwen3.5-0.8B    | `xml`  |    77.49% |  34.04% |       2.32% |      85.45% |   15.01% |
+| Qwen3.5-0.8B    | `dict` |    80.61% |  35.78% |       2.09% |      87.86% |   87.86% |
+| Qwen3.5-2B      | `xml`  |    88.58% |  46.27% |       4.91% |      97.18% |   25.51% |
+| Qwen3.5-2B      | `dict` |    82.48% |  43.51% |       3.55% |      99.68% |   99.68% |
+| Qwen3.5-4B      | `xml`  |    88.88% |  65.14% |      15.19% |      98.41% |   68.44% |
+| Qwen3.5-4B      | `dict` |    93.19% |  65.43% |       9.10% |     100.00% |  100.00% |
+| Qwen3.5-9B      | `xml`  |    92.87% |  69.34% |      19.46% |      99.14% |   75.17% |
+| Qwen3.5-9B      | `dict` |    93.65% |  69.04% |      12.14% |     100.00% |  100.00% |
+| Qwen3.5-27B     | `xml`  |    95.68% |  80.48% |      33.42% |      99.91% |   91.72% |
+| Qwen3.5-27B     | `dict` |    95.90% |  80.40% |      26.65% |     100.00% |  100.00% |
+| Qwen3.5-35B-A3B | `xml`  |    90.29% |  74.83% |      25.42% |      95.45% |   82.86% |
+| Qwen3.5-35B-A3B | `dict` |    94.16% |  74.76% |      19.87% |      99.23% |   99.23% |
 
-Few-shot `xml` rarely copies the utterance back faithfully (15-92%), which is
-why its exact-span slot F1 trails its by-value score; `dict` copies slot text
-rather than the whole utterance and loses almost nothing. Scale helps slots
+Few-shot `xml` rarely copies the utterance back faithfully (15-92%); `dict`
+copies only slot text rather than the whole utterance, and almost always gets it
+right (88-100%). Scale helps slots
 (35% at 0.8B, 80% at 27B), but exact match stays low (at most 33.4%). The
 35B-A3B mixture-of-experts model trails the dense 27B and is less well formed
 (95% against 99.9-100%).
 
 ### Fine-Tuned (LoRA)
 
-| Model          | Format   | Intent F1 | Slot F1 | Slot F1 scoped | Slot F1 exact | Exact match | Well formed | Faithful |
-| -------------- | -------- | --------- | ------- | -------------- | ------------- | ----------- | ----------- | -------- |
-| Qwen3.5-0.8B   | `xml`    |    98.17% |  95.35% |         95.12% |        94.86% |      79.90% |     100.00% |   99.32% |
-| Qwen3.5-0.8B   | `dict`   |    98.28% |  95.58% |         95.45% |        95.36% |      79.40% |     100.00% |  100.00% |
-| Qwen3.5-2B     | `xml`    |    98.79% |  95.57% |         95.51% |        95.16% |      79.99% |     100.00% |   99.32% |
-| Qwen3.5-2B     | `dict`   |    98.63% |  95.78% |         95.70% |        95.70% |      80.99% |     100.00% |  100.00% |
-| Qwen3.5-4B     | `xml`    |    98.56% |  96.55% |         96.39% |        96.39% |      84.36% |     100.00% |  100.00% |
-| Qwen3.5-4B     | `dict`   |    98.29% |  96.50% |         96.33% |        96.33% |      83.81% |     100.00% |  100.00% |
-| Qwen3.5-9B     | `xml`    |    98.56% |  96.99% |         96.98% |        96.86% |      86.40% |     100.00% |   99.73% |
-| Qwen3.5-9B     | `dict`   |    98.72% |  96.75% |         96.74% |        96.74% |      84.95% |     100.00% |  100.00% |
-| _other models_ |          |           |         |                |               |             |             |          |
+| Model          | Format   | Intent F1 | Slot F1 | Exact match | Well formed | Faithful |
+| -------------- | -------- | --------- | ------- | ----------- | ----------- | -------- |
+| Qwen3.5-0.8B   | `xml`    |    98.17% |  95.35% |      79.90% |     100.00% |   99.32% |
+| Qwen3.5-0.8B   | `dict`   |    98.28% |  95.58% |      79.40% |     100.00% |  100.00% |
+| Qwen3.5-2B     | `xml`    |    98.79% |  95.57% |      79.99% |     100.00% |   99.32% |
+| Qwen3.5-2B     | `dict`   |    98.63% |  95.78% |      80.99% |     100.00% |  100.00% |
+| Qwen3.5-4B     | `xml`    |    98.56% |  96.55% |      84.36% |     100.00% |  100.00% |
+| Qwen3.5-4B     | `dict`   |    98.29% |  96.50% |      83.81% |     100.00% |  100.00% |
+| Qwen3.5-9B     | `xml`    |    98.56% |  96.99% |      86.40% |     100.00% |   99.73% |
+| Qwen3.5-9B     | `dict`   |    98.72% |  96.75% |      84.95% |     100.00% |  100.00% |
+| _other models_ |          |           |         |             |             |          |
 
 One epoch of LoRA on the 0.8B model beats few-shot 27B by about 15 points of
 slot F1 and lifts exact match from 27-33% to about 80%. It also closes the
