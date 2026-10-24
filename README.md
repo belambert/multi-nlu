@@ -175,32 +175,32 @@ All results are on the full test split (n = 2199).
 
 Few-shot prompting (8 shots), from `scripts/compare-few-shot.sh`. Every score is
 an error rate (see [Metrics](#metrics)), timed as for the fine-tuned runs below.
-The re-run with error rates has so far reached 4B; larger models follow.
+The re-run with error rates has so far reached 9B; larger models follow.
 Sent., Malf. and Unf. are sentence, malformed and unfaithful errors, and ms is
 the time per utterance.
 
-| Qwen3.5 | Fmt    | Total      | Intent     | Slot    | Sent.      | Malf.  | Unf.   | ms   |
-| ------- | ------ | ---------- | ---------- | ------- | ---------- | ------ | ------ | ---- |
-| 0.8B    | `xml`  |     95.97% |     40.76% | 117.37% |     97.68% | 14.55% | 84.99% |  568 |
-| 0.8B    | `dict` |     88.01% |     35.79% | 108.26% |     97.91% | 12.14% | 12.14% |  358 |
-| 2B      | `xml`  |     79.57% |     22.28% | 101.78% |     95.09% |  2.82% | 74.49% |  749 |
-| 2B      | `dict` |     77.73% |     30.80% |  95.93% |     96.45% |  0.32% |  0.32% |  457 |
-| 4B      | `xml`  |     54.29% |     22.26% |  66.72% | **84.81%** |  1.59% | 31.56% | 1771 |
-| 4B      | `dict` | **50.68%** | **13.58%** |  65.06% |     90.90% |  0.00% |  0.00% | 1058 |
-| 9B      | `xml`  |            |            |         |            |        |        |      |
-| 9B      | `dict` |            |            |         |            |        |        |      |
-| 27B     | `xml`  |            |            |         |            |        |        |      |
-| 27B     | `dict` |            |            |         |            |        |        |      |
-| 35B-A3B | `xml`  |            |            |         |            |        |        |      |
-| 35B-A3B | `dict` |            |            |         |            |        |        |      |
+| Qwen3.5 | Fmt    | Total      | Intent     | Slot       | Sent.      | Malf.  | Unf.   | ms   |
+| ------- | ------ | ---------- | ---------- | ---------- | ---------- | ------ | ------ | ---- |
+| 0.8B    | `xml`  |     95.97% |     40.76% |    117.37% |     97.68% | 14.55% | 84.99% |  568 |
+| 0.8B    | `dict` |     88.01% |     35.79% |    108.26% |     97.91% | 12.14% | 12.14% |  358 |
+| 2B      | `xml`  |     79.57% |     22.28% |    101.78% |     95.09% |  2.82% | 74.49% |  749 |
+| 2B      | `dict` |     77.73% |     30.80% |     95.93% |     96.45% |  0.32% |  0.32% |  457 |
+| 4B      | `xml`  |     54.29% |     22.26% |     66.72% |     84.81% |  1.59% | 31.56% | 1771 |
+| 4B      | `dict` |     50.68% |     13.58% |     65.06% |     90.90% |  0.00% |  0.00% | 1058 |
+| 9B      | `xml`  |     47.11% |     14.21% |     59.87% | **80.54%** |  0.86% | 24.83% | 2417 |
+| 9B      | `dict` | **46.12%** | **12.70%** | **59.08%** |     87.86% |  0.00% |  0.00% | 1460 |
+| 27B     | `xml`  |            |            |            |            |        |        |      |
+| 27B     | `dict` |            |            |            |            |        |        |      |
+| 35B-A3B | `xml`  |            |            |            |            |        |        |      |
+| 35B-A3B | `dict` |            |            |            |            |        |        |      |
 
 Few-shot errors stay far above fine-tuned ones: slot errors exceed 100% below
 4B, since the models both miss most gold slots and invent spurious ones. Size
-helps most between 2B and 4B (about 25 points of total errors). `dict` has
-fewer total errors at every size so far (2-8 points) and runs 40% faster, but
-`xml` gets more utterances fully right at 4B (84.81% sentence errors against
-90.90%). `xml` paraphrases the utterance often (32-85%), while `dict` is
-unfaithful only when malformed.
+helps most between 2B and 4B (about 25 points of total errors), much less from
+4B to 9B (4-7 points). `dict` has fewer total errors at every size so far (1-8
+points) and runs about 40% faster, but `xml` gets more utterances fully right at
+4B and 9B (80.54% sentence errors against 87.86% at 9B). `xml` paraphrases the
+utterance often (25-85%), while `dict` is unfaithful only when malformed.
 
 ### Fine-Tuned (LoRA)
 
@@ -221,8 +221,9 @@ DGX Spark.
 | Qwen3.5-9B   | `dict` |     5.40% |  2.56% | 6.50% |   15.05% |      0.00% |     1167 |
 
 Fine-tuning closes most of the gap that few-shot prompting leaves: even the
-0.8B model has 7-8% total errors, against at least 50% for few-shot 4B. Errors fall steadily with size, most between 2B and 4B (about
-1.1 points of total errors), reaching 5.14% with 9B `xml`.
+0.8B model has 7-8% total errors, against at least 46% for few-shot 9B. Errors
+fall steadily with size, most between 2B and 4B (about 1.1 points of total
+errors), reaching 5.14% with 9B `xml`.
 
 The two formats stay close at every size. `dict` is slightly more accurate at
 0.8B and 2B and `xml` at 4B and 9B, by 0.2-0.4 points of total errors. `dict` is
