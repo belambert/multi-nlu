@@ -194,31 +194,6 @@ fewer total errors at every size so far (2-8 points) and runs 40% faster, but
 90.90%). `xml` paraphrases the utterance often (32-85%), while `dict` is
 unfaithful only when malformed.
 
-The earlier run, scored before the switch to error rates, covers the larger
-models too. Slot F1 is by value.
-
-| Model           | Format | Intent F1 | Slot F1 | Exact match | Well formed | Faithful |
-| --------------- | ------ | --------- | ------- | ----------- | ----------- | -------- |
-| Qwen3.5-0.8B    | `xml`  |    77.49% |  34.04% |       2.32% |      85.45% |   15.01% |
-| Qwen3.5-0.8B    | `dict` |    80.61% |  35.78% |       2.09% |      87.86% |   87.86% |
-| Qwen3.5-2B      | `xml`  |    88.58% |  46.27% |       4.91% |      97.18% |   25.51% |
-| Qwen3.5-2B      | `dict` |    82.48% |  43.51% |       3.55% |      99.68% |   99.68% |
-| Qwen3.5-4B      | `xml`  |    88.88% |  65.14% |      15.19% |      98.41% |   68.44% |
-| Qwen3.5-4B      | `dict` |    93.19% |  65.43% |       9.10% |     100.00% |  100.00% |
-| Qwen3.5-9B      | `xml`  |    92.87% |  69.34% |      19.46% |      99.14% |   75.17% |
-| Qwen3.5-9B      | `dict` |    93.65% |  69.04% |      12.14% |     100.00% |  100.00% |
-| Qwen3.5-27B     | `xml`  |    95.68% |  80.48% |      33.42% |      99.91% |   91.72% |
-| Qwen3.5-27B     | `dict` |    95.90% |  80.40% |      26.65% |     100.00% |  100.00% |
-| Qwen3.5-35B-A3B | `xml`  |    90.29% |  74.83% |      25.42% |      95.45% |   82.86% |
-| Qwen3.5-35B-A3B | `dict` |    94.16% |  74.76% |      19.87% |      99.23% |   99.23% |
-
-Few-shot `xml` rarely copies the utterance back faithfully (15-92%); `dict`
-copies only slot text rather than the whole utterance, and almost always gets it
-right (88-100%). Scale helps slots
-(35% at 0.8B, 80% at 27B), but exact match stays low (at most 33.4%). The
-35B-A3B mixture-of-experts model trails the dense 27B and is less well formed
-(95% against 99.9-100%).
-
 ### Fine-Tuned (LoRA)
 
 One epoch of LoRA per model and format, from `scripts/compare-finetuned.sh`.
@@ -238,8 +213,8 @@ DGX Spark.
 | Qwen3.5-9B   | `dict` |     5.40% |  2.56% | 6.50% |   15.05% |      0.00% |     1167 |
 
 Fine-tuning closes most of the gap that few-shot prompting leaves: even the
-0.8B model gets four in five utterances fully right, against at most a third
-for few-shot 27B. Errors fall steadily with size, most between 2B and 4B (about
+0.8B model gets four in five utterances fully right, against about one in seven
+for few-shot 4B. Errors fall steadily with size, most between 2B and 4B (about
 1.1 points of total errors), reaching 5.14% with 9B `xml`.
 
 The two formats stay close at every size. `dict` is slightly more accurate at
