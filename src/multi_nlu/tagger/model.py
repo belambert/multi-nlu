@@ -104,7 +104,7 @@ def train(
     tok = load_tokenizer(config.model_id)
     labels = Labels.from_schema(schema)
     # fp32 weights to match the heads; on cuda, Trainer's bf16 autocast covers speed
-    encoder = AutoModel.from_pretrained(config.model_id, dtype=torch.float32)
+    encoder = _encoder(AutoModel.from_pretrained(config.model_id, dtype=torch.float32))
     model = Tagger(encoder, labels, config.dropout, config.slot_weight).to(device)
 
     if config.wandb:
@@ -191,10 +191,15 @@ def save(model: Tagger, tok: PreTrainedTokenizerBase, out_dir: Path) -> None:
 
 def load(path: Path, device: str | None = None) -> tuple[Tagger, PreTrainedTokenizerBase]:
     """Load a saved tagger for inference."""
-    encoder: Any = AutoModel.from_config(AutoConfig.from_pretrained(str(path)))
+    encoder: Any = _encoder(AutoModel.from_config(AutoConfig.from_pretrained(str(path))))
     model = Tagger(encoder, Labels.from_json((path / LABELS_FILE).read_text()))
     load_model(model, str(path / WEIGHTS_FILE), device="cpu")
     return model.to(pick_device(device)).eval(), load_tokenizer(str(path))
+
+
+def _encoder(model: PreTrainedModel) -> PreTrainedModel:
+    """The encoder half of an encoder-decoder like T5; any other model as is."""
+    return model.get_encoder() if model.config.is_encoder_decoder else model
 
 
 def load_tokenizer(model_id: str) -> PreTrainedTokenizerBase:
