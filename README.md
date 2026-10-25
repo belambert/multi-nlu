@@ -160,7 +160,7 @@ and faithful by construction.
 
 Any backbone `AutoModel` can load works, decoders included.
 `scripts/compare-taggers.sh` trains and scores ModernBERT, BERT, RoBERTa and
-Qwen3.5 0.8B through 9B. Qwen tags with left context only, which is the point
+Qwen3.5 0.8B through 4B. Qwen tags with left context only, which is the point
 of the comparison:
 
     ./scripts/compare-taggers.sh
