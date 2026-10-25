@@ -269,19 +269,25 @@ memory with the current settings, so it has no results yet.
 
 Three epochs of full fine-tuning with `tag-train` defaults, scored by
 `tag-predict` on the full test split. Every score is an error rate; a tagger is
-never malformed or unfaithful. Time per utterance is at batch size 64 on
-Apple-silicon mps.
+never malformed or unfaithful. Time per utterance is at batch size 64 on a DGX
+Spark. Qwen3.5-9B is not run: full fine-tuning it likely needs more than 128 GB.
 
-| Backbone        | Total | Intent | Slot  | Sentence | Unfaithful | ms / utt |
-| --------------- | ----- | ------ | ----- | -------- | ---------- | -------- |
-| ModernBERT-base | 6.78% |  3.69% | 7.99% |   16.83% |      0.00% |      2.7 |
-| _other models_  |       |        |       |          |            |          |
+| Backbone        | Total     | Intent | Slot   | Sentence | Unfaithful | ms / utt |
+| --------------- | --------- | ------ | ------ | -------- | ---------- | -------- |
+| ModernBERT-base |     7.58% |  3.84% |  9.03% |   18.96% |      0.00% |      1.9 |
+| BERT-base       | **5.69%** |  2.68% |  6.85% |   14.92% |      0.00% |      1.1 |
+| RoBERTa-base    |     7.35% |  3.28% |  8.93% |   19.42% |      0.00% |      1.1 |
+| Qwen3.5-0.8B    |    33.11% | 33.23% | 33.07% |   68.80% |      0.00% |     11.1 |
+| Qwen3.5-2B      |           |        |        |          |            |          |
+| Qwen3.5-4B      |           |        |        |          |            |          |
 
-The 149M-parameter ModernBERT tagger has fewer total and sentence errors than
-LoRA Qwen3.5-0.8B and 2B, about 3 points fewer sentence errors than 0.8B, though
-its intent errors are slightly higher. It also tags in 2.7 ms per utterance,
-against at least 240 ms for LoRA generation (on different hardware), since it
-needs one forward pass and no generation.
+BERT-base is the best tagger, with 5.69% total errors, close to LoRA Qwen3.5-4B
+(5.77-5.99%) and with fewer sentence errors. ModernBERT and RoBERTa land near
+LoRA 0.8B. The encoders tag in 1-2 ms per utterance, against at least 240 ms
+for LoRA generation, since they need one forward pass and no generation.
+
+The Qwen3.5-0.8B tagger, which sees only left context, has 33% total errors.
+Nearly all of its intent errors are spurious (32.49% FP against 0.74% FN).
 
 ## Schemas
 
