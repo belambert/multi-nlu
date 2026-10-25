@@ -41,8 +41,9 @@ approach means adding one `Format` and nothing else. `--format` picks one, and
 | `xml`    | done   | the utterance copied verbatim with inline XML tags added                                 |
 | `dict`   | done   | `[{"PlayMusic": {"genre": …}}]`, slots copied verbatim; a repeated slot label collapses  |
 
-`xml` and `dict` both exist today, and an encoder-based baseline sits outside
-this interface.
+`xml` and `dict` both exist today. The [token tagger](#token-tagger) baseline
+sits outside this interface, since it classifies tokens instead of generating
+text.
 
 ## Use
 
@@ -133,6 +134,36 @@ the others. Training logs to wandb, so run `wandb login` first or set
 
 The device is chosen automatically — cuda, then mps, then cpu — and `--device`
 overrides it. Training uses bf16 on cuda and fp32 elsewhere.
+
+### Token Tagger
+
+The non-generative baseline is a BERT-style sequence tagger with two heads on
+a shared backbone. One head tags intent spans and the other tags slots, each
+with BIO labels over subword tokens:
+
+    book    a       table   in      ames    and  play         jazz
+    B-Book  I-Book  I-Book  I-Book  I-Book  O    B-PlayMusic  I-PlayMusic
+    O       O       O       O       B-city  O    O            B-genre
+
+Intents never nest, and slots sit inside intents, so these two flat layers
+capture the whole annotation. Decoding puts each slot under the intent span
+that contains it. A slot just outside every intent stretches the nearest one to
+cover it, and a slot the schema doesn't allow under its intent is dropped. The
+loss is the sum of both heads' cross-entropies; `--slot-weight` rebalances it.
+
+    uv run multi-nlu tag-train -m answerdotai/ModernBERT-base -o runs/tagger
+    uv run multi-nlu tag-predict -t runs/tagger --split test -o preds.jsonl
+
+`tag-predict` writes the same JSONL and sidecar as `predict`, rendered through
+`xml`, so `score` and `--detail` work on it unchanged. A tagger is well formed
+and faithful by construction.
+
+Any backbone `AutoModel` can load works, decoders included.
+`scripts/compare-taggers.sh` trains and scores ModernBERT, BERT, RoBERTa and
+Qwen3.5 0.8B through 4B. Qwen tags with left context only, which is the point
+of the comparison:
+
+    ./scripts/compare-taggers.sh
 
 ## Metrics
 
@@ -234,6 +265,30 @@ of examples.
 Fine-tuning Qwen3.5-27B runs out of memory on the DGX Spark's 128 GB of unified
 memory with the current settings, so it has no results yet.
 
+### Token Tagger
+
+Three epochs of full fine-tuning with `tag-train` defaults, scored by
+`tag-predict` on the full test split. Every score is an error rate; a tagger is
+never malformed or unfaithful. Time per utterance is at batch size 64 on a DGX
+Spark. Qwen3.5-9B is not run: full fine-tuning it likely needs more than 128 GB.
+
+| Backbone        | Total     | Intent | Slot   | Sentence | Unfaithful | ms / utt |
+| --------------- | --------- | ------ | ------ | -------- | ---------- | -------- |
+| ModernBERT-base |     7.58% |  3.84% |  9.03% |   18.96% |      0.00% |      1.9 |
+| BERT-base       | **5.69%** |  2.68% |  6.85% |   14.92% |      0.00% |      1.1 |
+| RoBERTa-base    |     7.35% |  3.28% |  8.93% |   19.42% |      0.00% |      1.1 |
+| Qwen3.5-0.8B    |    33.11% | 33.23% | 33.07% |   68.80% |      0.00% |     11.1 |
+| Qwen3.5-2B      |           |        |        |          |            |          |
+| Qwen3.5-4B      |           |        |        |          |            |          |
+
+BERT-base is the best tagger, with 5.69% total errors, close to LoRA Qwen3.5-4B
+(5.77-5.99%) and with fewer sentence errors. ModernBERT and RoBERTa land near
+LoRA 0.8B. The encoders tag in 1-2 ms per utterance, against at least 240 ms
+for LoRA generation, since they need one forward pass and no generation.
+
+The Qwen3.5-0.8B tagger, which sees only left context, has 33% total errors.
+Nearly all of its intent errors are spurious (32.49% FP against 0.74% FN).
+
 ## Schemas
 
 A schema is a YAML file naming the intents, the slots each intent takes, and the
@@ -265,7 +320,8 @@ annotations — and pass it to any command:
 
 - [ ] Re-run the few-shot experiments to get error-rate figures
 - [ ] Fit 27B fine-tuning in memory (e.g. 4-bit loading or gradient checkpointing)
-- [ ] Do the modeling with an encoder model
+- [x] Do the modeling with an encoder model
+- [ ] Bidirectional attention for decoder taggers, to separate the weights from the mask
 - [ ] Switch to alignment-based evaluation using an external library
 - [ ] Fix the 2 train rows whose slot span overruns its intent span (dataset repo)
 
@@ -288,13 +344,17 @@ annotations — and pass it to any command:
             prompts.py  the message layout shared by prompting and fine-tuning
             predict.py  batched generation
             train.py    LoRA fine-tuning
+        tagger/         token tagging over a pretrained backbone
+            tags.py     spans as two layers of BIO tags, and back
+            model.py    the two-headed token tagger: model, training, prediction
 
 ## Development
 
     uv run pytest
     uv run black . && uv run isort . && uv run mypy src
 
-The tests cover the span model, the `xml` and `dict` formats,
+The tests cover the span model, the `xml` and `dict` formats, BIO tagging,
 scoring, per-example diffs, prompting and schema handling, and need neither a
-model nor a GPU; one `dict` test pulls real examples from the dataset to check
-round-trip fidelity, so it needs network access the first time it isn't cached.
+model nor a GPU. One `dict` test and one tagging test pull real examples from
+the dataset to check round-trip fidelity, so they need network access the first
+time it isn't cached.
