@@ -158,10 +158,14 @@ loss is the sum of both heads' cross-entropies; `--slot-weight` rebalances it.
 `xml`, so `score` and `--detail` work on it unchanged. A tagger is well formed
 and faithful by construction.
 
-Any backbone `AutoModel` can load works, decoders included.
-`scripts/compare-taggers.sh` trains and scores ModernBERT, BERT, RoBERTa and
-Qwen3.5 0.8B through 4B. Qwen tags with left context only, which is the point
-of the comparison:
+Any backbone `AutoModel` can load works, decoders included; an encoder-decoder
+like T5 contributes only its encoder. `scripts/compare-taggers.sh` trains and
+scores encoders (ModernBERT, BERT, RoBERTa, DeBERTa-v3, EuroBERT, XLM-RoBERTa
+XL and the Flan-T5 encoder), Ettin encoder and decoder pairs from 150M to 1B, and
+Qwen3.5 0.8B through 4B. Decoders tag with left context only, which is the
+point of the comparison, and Ettin's pairs are trained alike so that is the
+only difference. Backbones too large to fully fine-tune in 128 GB are commented
+out, and runs that already have predictions are skipped:
 
     ./scripts/compare-taggers.sh
 
