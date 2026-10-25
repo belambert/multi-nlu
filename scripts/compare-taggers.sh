@@ -5,14 +5,15 @@
 # Backbones whose run already has predictions are skipped.
 set -euo pipefail
 
-# commented out: full fine-tuning with AdamW needs ~16 bytes per parameter,
-# more than the DGX Spark's 128 GB above roughly 7B
+# commented out: backbones above roughly 3B, to keep the comparison fast;
+# full fine-tuning with AdamW needs ~16 bytes per parameter, so above roughly
+# 7B it won't fit in the DGX Spark's 128 GB anyway
 models=(
-    answerdotai/ModernBERT-base
+    # answerdotai/ModernBERT-base # done
     answerdotai/ModernBERT-large
-    google-bert/bert-base-uncased
+    # google-bert/bert-base-uncased # done
     google-bert/bert-large-uncased
-    FacebookAI/roberta-base
+    # FacebookAI/roberta-base # done
     FacebookAI/roberta-large
     microsoft/deberta-v3-base
     microsoft/deberta-v3-large
@@ -27,12 +28,14 @@ models=(
     EuroBERT/EuroBERT-2.1B
     google/flan-t5-large
     google/flan-t5-xl
-    google/flan-t5-xxl # encoder only, about 4.8B
-    facebook/xlm-roberta-xl
+    # Qwen/Qwen3.5-0.8B # done
+    # Qwen/Qwen3.5-2B # done
+
+    # larger
+    # google/flan-t5-xxl # encoder only, about 4.8B
+    # facebook/xlm-roberta-xl # about 3.5B
     # facebook/xlm-roberta-xxl
-    Qwen/Qwen3.5-0.8B
-    Qwen/Qwen3.5-2B
-    Qwen/Qwen3.5-4B
+    # Qwen/Qwen3.5-4B
     # Qwen/Qwen3.5-9B
 )
 
