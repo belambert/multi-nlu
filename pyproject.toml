@@ -12,6 +12,7 @@ dependencies = [
     "datasets>=3.0",
     "peft>=0.14",
     "pyyaml>=6.0",
+    "sentencepiece>=0.2",
     "torch>=2.5",
     "tqdm>=4.66",
     "transformers>=5.2",
