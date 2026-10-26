@@ -156,12 +156,17 @@ loss is the sum of both heads' cross-entropies; `--slot-weight` rebalances it.
 
 `tag-predict` writes the same JSONL and sidecar as `predict`, rendered through
 `xml`, so `score` and `--detail` work on it unchanged. A tagger is well formed
-and faithful by construction.
+and should be faithful by construction, but Flan-T5 taggers are not yet (see
+[Token Tagger results](#token-tagger-1)).
 
-Any backbone `AutoModel` can load works, decoders included.
-`scripts/compare-taggers.sh` trains and scores ModernBERT, BERT, RoBERTa and
-Qwen3.5 0.8B through 4B. Qwen tags with left context only, which is the point
-of the comparison:
+Any backbone `AutoModel` can load works, decoders included; an encoder-decoder
+like T5 contributes only its encoder. `scripts/compare-taggers.sh` trains and
+scores encoders (ModernBERT, BERT, RoBERTa, DeBERTa-v3, EuroBERT and the
+Flan-T5 encoder), Ettin encoder and decoder pairs from 150M to 1B, and Qwen3.5
+0.8B and 2B. Decoders tag with left context only, which is the point of the
+comparison, and Ettin's pairs are trained alike so that is the only difference.
+Backbones above roughly 3B are commented out, as are runs that already have
+predictions, which the script would skip anyway:
 
     ./scripts/compare-taggers.sh
 
@@ -268,26 +273,57 @@ memory with the current settings, so it has no results yet.
 ### Token Tagger
 
 Three epochs of full fine-tuning with `tag-train` defaults, scored by
-`tag-predict` on the full test split. Every score is an error rate; a tagger is
-never malformed or unfaithful. Time per utterance is at batch size 64 on a DGX
-Spark. Qwen3.5-9B is not run: full fine-tuning it likely needs more than 128 GB.
+`tag-predict` on the full test split, from `scripts/compare-taggers.sh`. Every
+score is an error rate; no tagger is malformed. Time per utterance is at batch
+size 64 on a DGX Spark. Backbones above roughly 3B are not run yet.
 
-| Backbone        | Total     | Intent | Slot   | Sentence | Unfaithful | ms / utt |
-| --------------- | --------- | ------ | ------ | -------- | ---------- | -------- |
-| ModernBERT-base |     7.58% |  3.84% |  9.03% |   18.96% |      0.00% |      1.9 |
-| BERT-base       | **5.69%** |  2.68% |  6.85% |   14.92% |      0.00% |      1.1 |
-| RoBERTa-base    |     7.35% |  3.28% |  8.93% |   19.42% |      0.00% |      1.1 |
-| Qwen3.5-0.8B    |    33.11% | 33.23% | 33.07% |   68.80% |      0.00% |     11.1 |
-| Qwen3.5-2B      |           |        |        |          |            |          |
-| Qwen3.5-4B      |           |        |        |          |            |          |
+Encoders, including the Flan-T5 encoder:
 
-BERT-base is the best tagger, with 5.69% total errors, close to LoRA Qwen3.5-4B
-(5.77-5.99%) and with fewer sentence errors. ModernBERT and RoBERTa land near
-LoRA 0.8B. The encoders tag in 1-2 ms per utterance, against at least 240 ms
-for LoRA generation, since they need one forward pass and no generation.
+| Backbone         |     Total | Intent |   Slot | Sentence | Unfaithful | ms / utt |
+| ---------------- | --------- | ------ | ------ | -------- | ---------- | -------- |
+| ModernBERT-base  |     7.58% |  3.84% |  9.03% |   18.96% |      0.00% |      1.9 |
+| ModernBERT-large |     6.14% |  3.96% |  6.98% |   15.33% |      0.00% |      4.2 |
+| BERT-base        |     5.69% |  2.68% |  6.85% |   14.92% |      0.00% |      1.1 |
+| BERT-large       |     5.74% |  3.21% |  6.71% |   16.01% |      0.00% |      2.9 |
+| RoBERTa-base     |     7.35% |  3.28% |  8.93% |   19.42% |      0.00% |      1.1 |
+| RoBERTa-large    |     5.72% |  2.59% |  6.94% |   15.10% |      0.00% |      3.1 |
+| DeBERTa-v3-base  | **5.11%** |  2.56% |  6.10% |   13.87% |      0.00% |      1.9 |
+| DeBERTa-v3-large |     5.40% |  2.95% |  6.35% |   14.64% |      0.00% |      4.7 |
+| Ettin-150M       |     7.35% |  3.06% |  9.01% |   19.05% |      0.00% |      1.7 |
+| Ettin-400M       |     6.75% |  4.43% |  7.65% |   16.10% |      0.00% |      4.2 |
+| Ettin-1B         |     5.75% |  3.10% |  6.77% |   14.14% |      0.00% |      9.4 |
+| EuroBERT-210M    |     7.82% |  2.54% |  9.87% |   20.15% |      0.00% |      1.7 |
+| EuroBERT-610M    |     7.44% |  3.78% |  8.86% |   19.42% |      0.00% |      5.2 |
+| EuroBERT-2.1B    |     7.56% |  3.98% |  8.95% |   19.83% |      0.00% |     19.7 |
+| Flan-T5-large    |    11.86% |  3.46% | 15.12% |   29.79% |      4.50% |      5.7 |
+| Flan-T5-XL       |     5.92% |  2.02% |  7.44% |   16.73% |      0.50% |     16.6 |
 
-The Qwen3.5-0.8B tagger, which sees only left context, has 33% total errors.
-Nearly all of its intent errors are spurious (32.49% FP against 0.74% FN).
+Decoders, which tag with left context only (none is unfaithful):
+
+| Backbone     |      Total | Intent |   Slot | Sentence | ms / utt |
+| ------------ | ---------- | ------ | ------ | -------- | -------- |
+| Ettin-150M   |     37.27% | 33.95% | 38.56% |   71.67% |      1.8 |
+| Ettin-400M   |     36.43% | 34.89% | 37.02% |   71.40% |      4.3 |
+| Ettin-1B     |     34.03% | 31.99% | 34.82% |   70.40% |      9.7 |
+| Qwen3.5-0.8B | **33.11%** | 33.23% | 33.07% |   68.80% |     11.1 |
+| Qwen3.5-2B   |     33.78% | 34.49% | 33.50% |   69.71% |     18.3 |
+
+DeBERTa-v3-base is the best tagger, with 5.11% total errors, as good as LoRA
+Qwen3.5-9B (5.14%) and with about the same sentence errors. Most large encoders
+land between 5.4% and 6.1%, near LoRA 4B. Size helps little: DeBERTa-v3-base
+beats its large model, and EuroBERT does not improve from 210M to 2.1B. The
+encoders tag in 1-20 ms per utterance, against at least 240 ms for LoRA
+generation, since they need one forward pass and no generation.
+
+Every decoder has 33-37% total errors, whatever its family or size, against
+5.7-7.4% for the matching Ettin encoders. Nearly all of their intent errors are
+spurious (31-34% FP against at most 1.1% FN). That fits a tagger that cannot see
+where a span ends, but a bug in the decoder path would look the same, so these
+numbers need a sanity check.
+
+Flan-T5 is unfaithful because its tokenizer can split a word into a bare `▁`
+and the rest, and the bare `▁` gets the same character offsets as the first
+letter, so decoding repeats that letter ("samoa" becomes "ssamoa").
 
 ## Schemas
 
@@ -322,6 +358,8 @@ annotations — and pass it to any command:
 - [ ] Fit 27B fine-tuning in memory (e.g. 4-bit loading or gradient checkpointing)
 - [x] Do the modeling with an encoder model
 - [ ] Bidirectional attention for decoder taggers, to separate the weights from the mask
+- [ ] Sanity-check the decoder taggers' 33-37% error rates for a bug
+- [ ] Fix Flan-T5 taggers repeating a letter after a bare `▁` token
 - [ ] Switch to alignment-based evaluation using an external library
 - [ ] Fix the 2 train rows whose slot span overruns its intent span (dataset repo)
 
